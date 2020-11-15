@@ -32,7 +32,6 @@
 #include "prims/jvmtiEventController.hpp"
 #include "prims/jvmtiTrace.hpp"
 #include "prims/jvmtiUtil.hpp"
-#include "runtime/escapeBarrier.hpp"
 #include "runtime/stackValueCollection.hpp"
 #include "runtime/vmOperations.hpp"
 #include "utilities/ostream.hpp"
@@ -322,8 +321,6 @@ class VM_GetOrSetLocal : public VM_Operation {
   javaVFrame* _jvf;
   bool        _set;
 
-  EscapeBarrier _eb;
-
   // It is possible to get the receiver out of a non-static native wrapper
   // frame.  Use VM_GetReceiver to do this.
   virtual bool getting_receiver() const { return false; }
@@ -350,7 +347,6 @@ public:
   jvalue value()         { return _value; }
   jvmtiError result()    { return _result; }
 
-  bool doit_prologue();
   void doit();
   bool allow_nested_vm_operations() const;
   const char* name() const                       { return "get/set locals"; }

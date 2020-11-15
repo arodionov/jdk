@@ -98,55 +98,40 @@ class CMoveNNode : public CMoveNode {
 };
 
 //
-class MoveNode : public Node {
-  protected:
-  MoveNode(Node* value) : Node(NULL, value) {
-    init_class_id(Class_Move);
-  }
-
+class MoveI2FNode : public Node {
   public:
-  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
-  virtual Node* Identity(PhaseGVN* phase);
-};
-
-class MoveI2FNode : public MoveNode {
-  public:
-  MoveI2FNode(Node* value) : MoveNode(value) {}
+  MoveI2FNode( Node *value ) : Node(0,value) {}
   virtual int Opcode() const;
-  virtual const Type* bottom_type() const { return Type::FLOAT; }
+  virtual const Type *bottom_type() const { return Type::FLOAT; }
   virtual uint ideal_reg() const { return Op_RegF; }
   virtual const Type* Value(PhaseGVN* phase) const;
-  virtual Node* Identity(PhaseGVN* phase);
 };
 
-class MoveL2DNode : public MoveNode {
+class MoveL2DNode : public Node {
   public:
-  MoveL2DNode(Node* value) : MoveNode(value) {}
+  MoveL2DNode( Node *value ) : Node(0,value) {}
   virtual int Opcode() const;
-  virtual const Type* bottom_type() const { return Type::DOUBLE; }
+  virtual const Type *bottom_type() const { return Type::DOUBLE; }
   virtual uint ideal_reg() const { return Op_RegD; }
   virtual const Type* Value(PhaseGVN* phase) const;
-  virtual Node* Identity(PhaseGVN* phase);
 };
 
-class MoveF2INode : public MoveNode {
+class MoveF2INode : public Node {
   public:
-  MoveF2INode(Node* value) : MoveNode(value) {}
+  MoveF2INode( Node *value ) : Node(0,value) {}
   virtual int Opcode() const;
-  virtual const Type* bottom_type() const { return TypeInt::INT; }
+  virtual const Type *bottom_type() const { return TypeInt::INT; }
   virtual uint ideal_reg() const { return Op_RegI; }
   virtual const Type* Value(PhaseGVN* phase) const;
-  virtual Node* Identity(PhaseGVN* phase);
 };
 
-class MoveD2LNode : public MoveNode {
+class MoveD2LNode : public Node {
   public:
-  MoveD2LNode(Node* value) : MoveNode(value) {}
+  MoveD2LNode( Node *value ) : Node(0,value) {}
   virtual int Opcode() const;
-  virtual const Type* bottom_type() const { return TypeLong::LONG; }
+  virtual const Type *bottom_type() const { return TypeLong::LONG; }
   virtual uint ideal_reg() const { return Op_RegL; }
   virtual const Type* Value(PhaseGVN* phase) const;
-  virtual Node* Identity(PhaseGVN* phase);
 };
 
 //------------------------------BinaryNode-------------------------------------

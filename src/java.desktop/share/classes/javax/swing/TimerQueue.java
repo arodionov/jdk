@@ -248,7 +248,7 @@ class TimerQueue implements Runnable
          * Sequence number to break scheduling ties, and in turn to
          * guarantee FIFO order among tied entries.
          */
-        private static final AtomicLong sequencer = new AtomicLong();
+        private static final AtomicLong sequencer = new AtomicLong(0);
 
         /** Sequence number to break ties FIFO */
         private final long sequenceNumber;

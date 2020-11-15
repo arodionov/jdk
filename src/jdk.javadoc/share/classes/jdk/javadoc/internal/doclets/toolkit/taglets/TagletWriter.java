@@ -34,13 +34,6 @@ import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.TypeMirror;
 
 import com.sun.source.doctree.DocTree;
-import com.sun.source.doctree.IndexTree;
-import com.sun.source.doctree.LiteralTree;
-import com.sun.source.doctree.ParamTree;
-import com.sun.source.doctree.ReturnTree;
-import com.sun.source.doctree.SeeTree;
-import com.sun.source.doctree.SystemPropertyTree;
-import com.sun.source.doctree.ThrowsTree;
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.taglets.Taglet.UnsupportedTagletOperationException;
@@ -92,7 +85,7 @@ public abstract class TagletWriter {
      *
      * @return the output
      */
-    protected abstract Content indexTagOutput(Element element, IndexTree tag);
+    protected abstract Content indexTagOutput(Element element, DocTree tag);
 
     /**
      * Returns the output for a {@code {@docRoot}} tag.
@@ -118,7 +111,7 @@ public abstract class TagletWriter {
      *
      * @return the output
      */
-    protected abstract Content literalTagOutput(Element element, LiteralTree tag);
+    protected abstract Content literalTagOutput(Element element, DocTree tag);
 
     /**
      * Returns the header for the {@code @param} tags.
@@ -140,7 +133,7 @@ public abstract class TagletWriter {
      *
      * @return the output
      */
-    protected abstract Content paramTagOutput(Element element, ParamTree paramTag, String paramName);
+    protected abstract Content paramTagOutput(Element element, DocTree paramTag, String paramName);
 
     /**
      * Returns the output for a {@code @return} tag.
@@ -150,7 +143,7 @@ public abstract class TagletWriter {
      *
      * @return the output
      */
-    protected abstract Content returnTagOutput(Element element, ReturnTree returnTag);
+    protected abstract Content returnTagOutput(Element element, DocTree returnTag);
 
     /**
      * Returns the output for {@code @see} tags.
@@ -160,7 +153,7 @@ public abstract class TagletWriter {
      *
      * @return the output
      */
-    protected abstract Content seeTagOutput(Element element, List<? extends SeeTree> seeTags);
+    protected abstract Content seeTagOutput(Element element, List<? extends DocTree> seeTags);
 
     /**
      * Returns the output for a series of simple tags.
@@ -181,7 +174,7 @@ public abstract class TagletWriter {
      *
      * @return the output
      */
-    protected abstract Content systemPropertyTagOutput(Element element, SystemPropertyTree systemPropertyTag);
+    protected abstract Content systemPropertyTagOutput(Element element, DocTree systemPropertyTag);
 
     /**
      * Returns the header for the {@code @throws} tag.
@@ -199,7 +192,7 @@ public abstract class TagletWriter {
      *
      * @return the output
      */
-    protected abstract Content throwsTagOutput(Element element, ThrowsTree throwsTag, TypeMirror substituteType);
+    protected abstract Content throwsTagOutput(Element element, DocTree throwsTag, TypeMirror substituteType);
 
     /**
      * Returns the output for a default {@code @throws} tag.

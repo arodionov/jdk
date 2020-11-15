@@ -25,7 +25,8 @@
  * @test
  * @bug 8231827
  * @summary Testing pattern matching against the null constant
- * @compile/fail/ref=NullsInPatterns.out -XDrawDiagnostics NullsInPatterns.java
+ * @compile --enable-preview -source ${jdk.version} NullsInPatterns.java
+ * @run main/othervm --enable-preview NullsInPatterns
  */
 import java.util.List;
 

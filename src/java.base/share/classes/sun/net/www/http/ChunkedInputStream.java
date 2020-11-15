@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,9 @@
 package sun.net.www.http;
 
 import java.io.*;
-import java.util.concurrent.locks.ReentrantLock;
+import java.util.*;
+
+import sun.net.*;
 import sun.net.www.*;
 import sun.nio.cs.US_ASCII;
 
@@ -39,7 +41,8 @@ import sun.nio.cs.US_ASCII;
  * can be hurried to the end of the stream if the bytes are available on
  * the underlying stream.
  */
-public class ChunkedInputStream extends InputStream implements Hurryable {
+public
+class ChunkedInputStream extends InputStream implements Hurryable {
 
     /**
      * The underlying stream
@@ -122,8 +125,6 @@ public class ChunkedInputStream extends InputStream implements Hurryable {
      * <code>close</code> method.
      */
     private boolean closed;
-
-    private final ReentrantLock readLock = new ReentrantLock();
 
     /*
      * Maximum chunk header size of 2KB + 2 bytes for CRLF
@@ -647,19 +648,14 @@ public class ChunkedInputStream extends InputStream implements Hurryable {
      * @exception  IOException  if an I/O error occurs.
      * @see        java.io.FilterInputStream#in
      */
-    public int read() throws IOException {
-        readLock.lock();
-        try {
-            ensureOpen();
-            if (chunkPos >= chunkCount) {
-                if (readAhead(true) <= 0) {
-                    return -1;
-                }
+    public synchronized int read() throws IOException {
+        ensureOpen();
+        if (chunkPos >= chunkCount) {
+            if (readAhead(true) <= 0) {
+                return -1;
             }
-            return chunkData[chunkPos++] & 0xff;
-        } finally {
-            readLock.unlock();
         }
+        return chunkData[chunkPos++] & 0xff;
     }
 
 
@@ -674,47 +670,42 @@ public class ChunkedInputStream extends InputStream implements Hurryable {
      *             the stream has been reached.
      * @exception  IOException  if an I/O error occurs.
      */
-    public int read(byte b[], int off, int len)
+    public synchronized int read(byte b[], int off, int len)
         throws IOException
     {
-        readLock.lock();
-        try {
-            ensureOpen();
-            if ((off < 0) || (off > b.length) || (len < 0) ||
-                    ((off + len) > b.length) || ((off + len) < 0)) {
-                throw new IndexOutOfBoundsException();
-            } else if (len == 0) {
-                return 0;
-            }
-
-            int avail = chunkCount - chunkPos;
-            if (avail <= 0) {
-                /*
-                 * Optimization: if we're in the middle of the chunk read
-                 * directly from the underlying stream into the caller's
-                 * buffer
-                 */
-                if (state == STATE_READING_CHUNK) {
-                    return fastRead(b, off, len);
-                }
-
-                /*
-                 * We're not in the middle of a chunk so we must read ahead
-                 * until there is some chunk data available.
-                 */
-                avail = readAhead(true);
-                if (avail < 0) {
-                    return -1;      /* EOF */
-                }
-            }
-            int cnt = (avail < len) ? avail : len;
-            System.arraycopy(chunkData, chunkPos, b, off, cnt);
-            chunkPos += cnt;
-
-            return cnt;
-        } finally {
-            readLock.unlock();
+        ensureOpen();
+        if ((off < 0) || (off > b.length) || (len < 0) ||
+            ((off + len) > b.length) || ((off + len) < 0)) {
+            throw new IndexOutOfBoundsException();
+        } else if (len == 0) {
+            return 0;
         }
+
+        int avail = chunkCount - chunkPos;
+        if (avail <= 0) {
+            /*
+             * Optimization: if we're in the middle of the chunk read
+             * directly from the underlying stream into the caller's
+             * buffer
+             */
+            if (state == STATE_READING_CHUNK) {
+                return fastRead( b, off, len );
+            }
+
+            /*
+             * We're not in the middle of a chunk so we must read ahead
+             * until there is some chunk data available.
+             */
+            avail = readAhead(true);
+            if (avail < 0) {
+                return -1;      /* EOF */
+            }
+        }
+        int cnt = (avail < len) ? avail : len;
+        System.arraycopy(chunkData, chunkPos, b, off, cnt);
+        chunkPos += cnt;
+
+        return cnt;
     }
 
     /**
@@ -726,25 +717,20 @@ public class ChunkedInputStream extends InputStream implements Hurryable {
      * @exception  IOException  if an I/O error occurs.
      * @see        java.io.FilterInputStream#in
      */
-    public int available() throws IOException {
-        readLock.lock();
-        try {
-            ensureOpen();
+    public synchronized int available() throws IOException {
+        ensureOpen();
 
-            int avail = chunkCount - chunkPos;
-            if (avail > 0) {
-                return avail;
-            }
+        int avail = chunkCount - chunkPos;
+        if(avail > 0) {
+            return avail;
+        }
 
-            avail = readAhead(false);
+        avail = readAhead(false);
 
-            if (avail < 0) {
-                return 0;
-            } else {
-                return avail;
-            }
-        } finally {
-            readLock.unlock();
+        if (avail < 0) {
+            return 0;
+        } else  {
+            return avail;
         }
     }
 
@@ -759,18 +745,12 @@ public class ChunkedInputStream extends InputStream implements Hurryable {
      *
      * @exception  IOException  if an I/O error occurs.
      */
-    public void close() throws IOException {
-        if (closed) return;
-        readLock.lock();
-        try {
-            if (closed) {
-                return;
-            }
-            closeUnderlying();
-            closed = true;
-        } finally {
-            readLock.unlock();
+    public synchronized void close() throws IOException {
+        if (closed) {
+            return;
         }
+        closeUnderlying();
+        closed = true;
     }
 
     /**
@@ -782,27 +762,22 @@ public class ChunkedInputStream extends InputStream implements Hurryable {
      * without blocking then this stream can't be hurried and should be
      * closed.
      */
-    public boolean hurry() {
-        readLock.lock();
-        try {
-            if (in == null || error) {
-                return false;
-            }
-
-            try {
-                readAhead(false);
-            } catch (Exception e) {
-                return false;
-            }
-
-            if (error) {
-                return false;
-            }
-
-            return (state == STATE_DONE);
-        } finally {
-            readLock.unlock();
+    public synchronized boolean hurry() {
+        if (in == null || error) {
+            return false;
         }
+
+        try {
+            readAhead(false);
+        } catch (Exception e) {
+            return false;
+        }
+
+        if (error) {
+            return false;
+        }
+
+        return (state == STATE_DONE);
     }
 
 }

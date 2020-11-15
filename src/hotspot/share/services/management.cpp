@@ -303,7 +303,7 @@ static void initialize_ThreadInfo_constructor_arguments(JavaCallArguments* args,
     waited_time = max_julong;
   }
 
-  int thread_status = static_cast<int>(snapshot->thread_status());
+  int thread_status = snapshot->thread_status();
   assert((thread_status & JMM_THREAD_STATE_FLAG_MASK) == 0, "Flags already set in thread_status in Thread object");
   if (snapshot->is_ext_suspended()) {
     thread_status |= JMM_THREAD_STATE_FLAG_SUSPENDED;
@@ -1474,25 +1474,25 @@ bool add_global_entry(Handle name, jmmVMGlobal *global, JVMFlag *flag, TRAPS) {
   global->writeable = flag->is_writeable();
   global->external = flag->is_external();
   switch (flag->get_origin()) {
-    case JVMFlagOrigin::DEFAULT:
+    case JVMFlag::DEFAULT:
       global->origin = JMM_VMGLOBAL_ORIGIN_DEFAULT;
       break;
-    case JVMFlagOrigin::COMMAND_LINE:
+    case JVMFlag::COMMAND_LINE:
       global->origin = JMM_VMGLOBAL_ORIGIN_COMMAND_LINE;
       break;
-    case JVMFlagOrigin::ENVIRON_VAR:
+    case JVMFlag::ENVIRON_VAR:
       global->origin = JMM_VMGLOBAL_ORIGIN_ENVIRON_VAR;
       break;
-    case JVMFlagOrigin::CONFIG_FILE:
+    case JVMFlag::CONFIG_FILE:
       global->origin = JMM_VMGLOBAL_ORIGIN_CONFIG_FILE;
       break;
-    case JVMFlagOrigin::MANAGEMENT:
+    case JVMFlag::MANAGEMENT:
       global->origin = JMM_VMGLOBAL_ORIGIN_MANAGEMENT;
       break;
-    case JVMFlagOrigin::ERGONOMIC:
+    case JVMFlag::ERGONOMIC:
       global->origin = JMM_VMGLOBAL_ORIGIN_ERGONOMIC;
       break;
-    case JVMFlagOrigin::ATTACH_ON_DEMAND:
+    case JVMFlag::ATTACH_ON_DEMAND:
       global->origin = JMM_VMGLOBAL_ORIGIN_ATTACH_ON_DEMAND;
       break;
     default:
@@ -1584,7 +1584,7 @@ JVM_ENTRY(void, jmm_SetVMGlobal(JNIEnv *env, jstring flag_name, jvalue new_value
   char* name = java_lang_String::as_utf8_string(fn);
 
   FormatBuffer<80> error_msg("%s", "");
-  int succeed = WriteableFlags::set_flag(name, new_value, JVMFlagOrigin::MANAGEMENT, error_msg);
+  int succeed = WriteableFlags::set_flag(name, new_value, JVMFlag::MANAGEMENT, error_msg);
 
   if (succeed != JVMFlag::SUCCESS) {
     if (succeed == JVMFlag::MISSING_VALUE) {

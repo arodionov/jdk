@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,8 @@
 #define SHARE_OOPS_FIELDINFO_HPP
 
 #include "oops/constantPool.hpp"
-#include "oops/symbol.hpp"
 #include "oops/typeArrayOop.hpp"
-#include "utilities/vmEnums.hpp"
+#include "classfile/vmSymbols.hpp"
 
 // This class represents the field information contained in the fields
 // array of an InstanceKlass.  Currently it's laid on top an array of
@@ -47,21 +46,19 @@ class FieldInfo {
   // as an array of 6 shorts.
 
 #define FIELDINFO_TAG_SIZE             2
-#define FIELDINFO_TAG_OFFSET           1 << 0
-#define FIELDINFO_TAG_CONTENDED        1 << 1
+#define FIELDINFO_TAG_BLANK            0
+#define FIELDINFO_TAG_OFFSET           1
+#define FIELDINFO_TAG_TYPE_PLAIN       2
+#define FIELDINFO_TAG_TYPE_CONTENDED   3
+#define FIELDINFO_TAG_MASK             3
 
   // Packed field has the tag, and can be either of:
   //    hi bits <--------------------------- lo bits
   //   |---------high---------|---------low---------|
-  //    ..........................................CO
-  //    ..........................................00  - non-contended field
-  //    [--contention_group--]....................10  - contended field with contention group
+  //    ..........................................00  - blank
   //    [------------------offset----------------]01  - real field offset
-
-  // Bit O indicates if the packed field contains an offset (O=1) or not (O=0)
-  // Bit C indicates if the field is contended (C=1) or not (C=0)
-  //       (if it is contended, the high packed field contains the contention group)
-
+  //    ......................[-------type-------]10  - plain field with type
+  //    [--contention_group--][-------type-------]11  - contended field with type and contention group
   enum FieldOffset {
     access_flags_offset      = 0,
     name_index_offset        = 1,
@@ -105,22 +102,78 @@ class FieldInfo {
 
   u2 access_flags() const                        { return _shorts[access_flags_offset];            }
   u4 offset() const {
-    assert((_shorts[low_packed_offset] & FIELDINFO_TAG_OFFSET) != 0, "Offset must have been set");
-    return build_int_from_shorts(_shorts[low_packed_offset], _shorts[high_packed_offset]) >> FIELDINFO_TAG_SIZE;
+    u2 lo = _shorts[low_packed_offset];
+    switch(lo & FIELDINFO_TAG_MASK) {
+      case FIELDINFO_TAG_OFFSET:
+        return build_int_from_shorts(_shorts[low_packed_offset], _shorts[high_packed_offset]) >> FIELDINFO_TAG_SIZE;
+#ifndef PRODUCT
+      case FIELDINFO_TAG_TYPE_PLAIN:
+        fatal("Asking offset for the plain type field");
+      case FIELDINFO_TAG_TYPE_CONTENDED:
+        fatal("Asking offset for the contended type field");
+      case FIELDINFO_TAG_BLANK:
+        fatal("Asking offset for the blank field");
+#endif
+    }
+    ShouldNotReachHere();
+    return 0;
   }
 
   bool is_contended() const {
-    return (_shorts[low_packed_offset] & FIELDINFO_TAG_CONTENDED) != 0;
+    u2 lo = _shorts[low_packed_offset];
+    switch(lo & FIELDINFO_TAG_MASK) {
+      case FIELDINFO_TAG_TYPE_PLAIN:
+        return false;
+      case FIELDINFO_TAG_TYPE_CONTENDED:
+        return true;
+#ifndef PRODUCT
+      case FIELDINFO_TAG_OFFSET:
+        fatal("Asking contended flag for the field with offset");
+      case FIELDINFO_TAG_BLANK:
+        fatal("Asking contended flag for the blank field");
+#endif
+    }
+    ShouldNotReachHere();
+    return false;
   }
 
   u2 contended_group() const {
-    assert((_shorts[low_packed_offset] & FIELDINFO_TAG_OFFSET) == 0, "Offset must not have been set");
-    assert((_shorts[low_packed_offset] & FIELDINFO_TAG_CONTENDED) != 0, "Field must be contended");
-    return _shorts[high_packed_offset];
+    u2 lo = _shorts[low_packed_offset];
+    switch(lo & FIELDINFO_TAG_MASK) {
+      case FIELDINFO_TAG_TYPE_PLAIN:
+        return 0;
+      case FIELDINFO_TAG_TYPE_CONTENDED:
+        return _shorts[high_packed_offset];
+#ifndef PRODUCT
+      case FIELDINFO_TAG_OFFSET:
+        fatal("Asking the contended group for the field with offset");
+      case FIELDINFO_TAG_BLANK:
+        fatal("Asking the contended group for the blank field");
+#endif
+    }
+    ShouldNotReachHere();
+    return 0;
  }
 
+  u2 allocation_type() const {
+    u2 lo = _shorts[low_packed_offset];
+    switch(lo & FIELDINFO_TAG_MASK) {
+      case FIELDINFO_TAG_TYPE_PLAIN:
+      case FIELDINFO_TAG_TYPE_CONTENDED:
+        return (lo >> FIELDINFO_TAG_SIZE);
+#ifndef PRODUCT
+      case FIELDINFO_TAG_OFFSET:
+        fatal("Asking the field type for field with offset");
+      case FIELDINFO_TAG_BLANK:
+        fatal("Asking the field type for the blank field");
+#endif
+    }
+    ShouldNotReachHere();
+    return 0;
+  }
+
   bool is_offset_set() const {
-    return (_shorts[low_packed_offset] & FIELDINFO_TAG_OFFSET)!= 0;
+    return (_shorts[low_packed_offset] & FIELDINFO_TAG_MASK) == FIELDINFO_TAG_OFFSET;
   }
 
   Symbol* name(ConstantPool* cp) const {
@@ -146,11 +199,41 @@ class FieldInfo {
     _shorts[high_packed_offset] = extract_high_short_from_int(val);
   }
 
+  void set_allocation_type(int type) {
+    u2 lo = _shorts[low_packed_offset];
+    switch(lo & FIELDINFO_TAG_MASK) {
+      case FIELDINFO_TAG_BLANK:
+        _shorts[low_packed_offset] = ((type << FIELDINFO_TAG_SIZE)) & 0xFFFF;
+        _shorts[low_packed_offset] &= ~FIELDINFO_TAG_MASK;
+        _shorts[low_packed_offset] |= FIELDINFO_TAG_TYPE_PLAIN;
+        return;
+#ifndef PRODUCT
+      case FIELDINFO_TAG_TYPE_PLAIN:
+      case FIELDINFO_TAG_TYPE_CONTENDED:
+      case FIELDINFO_TAG_OFFSET:
+        fatal("Setting the field type with overwriting");
+#endif
+    }
+    ShouldNotReachHere();
+  }
+
   void set_contended_group(u2 val) {
-    assert((_shorts[low_packed_offset] & FIELDINFO_TAG_OFFSET) == 0, "Offset must not have been set");
-    assert((_shorts[low_packed_offset] & FIELDINFO_TAG_CONTENDED) == 0, "Overwritting contended group");
-    _shorts[low_packed_offset] |= FIELDINFO_TAG_CONTENDED;
-    _shorts[high_packed_offset] = val;
+    u2 lo = _shorts[low_packed_offset];
+    switch(lo & FIELDINFO_TAG_MASK) {
+      case FIELDINFO_TAG_TYPE_PLAIN:
+        _shorts[low_packed_offset] |= FIELDINFO_TAG_TYPE_CONTENDED;
+        _shorts[high_packed_offset] = val;
+        return;
+#ifndef PRODUCT
+      case FIELDINFO_TAG_TYPE_CONTENDED:
+        fatal("Overwriting contended group");
+      case FIELDINFO_TAG_BLANK:
+        fatal("Setting contended group for the blank field");
+      case FIELDINFO_TAG_OFFSET:
+        fatal("Setting contended group for field with offset");
+#endif
+    }
+    ShouldNotReachHere();
   }
 
   bool is_internal() const {
@@ -167,7 +250,7 @@ class FieldInfo {
 
   Symbol* lookup_symbol(int symbol_index) const {
     assert(is_internal(), "only internal fields");
-    return Symbol::vm_symbol_at(static_cast<vmSymbolID>(symbol_index));
+    return vmSymbols::symbol_at((vmSymbols::SID)symbol_index);
   }
 };
 

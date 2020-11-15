@@ -136,21 +136,20 @@ public class TableHeader extends Content {
      * @return a Content object
      */
     private Content toContent() {
-        Content header = new ContentBuilder();
+        String scope = "col";
+        Content tr = new HtmlTree(TagName.TR);
         int i = 0;
         for (Content cellContent : cellContents) {
             HtmlStyle style = (styles != null) ? styles.get(i)
                     : (i == 0) ? HtmlStyle.colFirst
                     : (i == (cellContents.size() - 1)) ? HtmlStyle.colLast
                     : (i == 1) ? HtmlStyle.colSecond : null;
-            HtmlTree cell = HtmlTree.DIV(HtmlStyle.tableHeader, cellContent);
-            if (style != null) {
-                cell.addStyle(style);
-            }
-            header.add(cell);
+            Content cell = (style == null) ? HtmlTree.TH(scope, cellContent)
+                    : HtmlTree.TH(style, scope, cellContent);
+            tr.add(cell);
             i++;
         }
-        return header;
+        return tr;
     }
 
 }

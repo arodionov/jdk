@@ -76,7 +76,8 @@ public class BuilderFactory {
      * @return the builder that builds the constant summary.
      */
     public AbstractBuilder getConstantsSummaryBuilder() {
-        return ConstantsSummaryBuilder.getInstance(context);
+        return ConstantsSummaryBuilder.getInstance(context,
+            writerFactory.getConstantsSummaryWriter());
     }
 
     /**

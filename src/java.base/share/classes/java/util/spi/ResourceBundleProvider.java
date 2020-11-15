@@ -141,6 +141,7 @@ import java.util.ResourceBundle;
  *      Resource Bundles and Named Modules</a>
  * @see java.util.ServiceLoader
  * @since 9
+ * @spec JPMS
  */
 public interface ResourceBundleProvider {
     /**

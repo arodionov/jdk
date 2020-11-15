@@ -955,10 +955,9 @@ public class Main {
                             SignerInfo si = p7.getSignerInfos()[0];
                             X509Certificate signer = si.getCertificate(p7);
                             String digestAlg = digestMap.get(s);
-                            String sigAlg = SignerInfo.makeSigAlg(
-                                    si.getDigestAlgorithmId(),
-                                    si.getDigestEncryptionAlgorithmId(),
-                                    si.getAuthenticatedAttributes() == null);
+                            String sigAlg = AlgorithmId.makeSigAlg(
+                                    si.getDigestAlgorithmId().getName(),
+                                    si.getDigestEncryptionAlgorithmId().getName());
                             PublicKey key = signer.getPublicKey();
                             PKCS7 tsToken = si.getTsToken();
                             if (tsToken != null) {
@@ -969,10 +968,9 @@ public class Main {
                                 TimestampToken tsTokenInfo = new TimestampToken(encTsTokenInfo);
                                 PublicKey tsKey = tsSigner.getPublicKey();
                                 String tsDigestAlg = tsTokenInfo.getHashAlgorithm().getName();
-                                String tsSigAlg = SignerInfo.makeSigAlg(
-                                        tsSi.getDigestAlgorithmId(),
-                                        tsSi.getDigestEncryptionAlgorithmId(),
-                                        tsSi.getAuthenticatedAttributes() == null);
+                                String tsSigAlg = AlgorithmId.makeSigAlg(
+                                        tsSi.getDigestAlgorithmId().getName(),
+                                        tsSi.getDigestEncryptionAlgorithmId().getName());
                                 Calendar c = Calendar.getInstance(
                                         TimeZone.getTimeZone("UTC"),
                                         Locale.getDefault(Locale.Category.FORMAT));
@@ -1600,7 +1598,7 @@ public class Main {
 
     /**
      * Maps certificates (as keys) to alias names associated in the keystore
-     * {@link #keystore} (as values).
+     * {@link #store} (as values).
      */
     Hashtable<Certificate, String> storeHash = new Hashtable<>();
 
@@ -1727,7 +1725,7 @@ public class Main {
             tsaURI = new URI(tsaUrl);
         } else if (tsaAlias != null) {
             tsaCert = getTsaCert(tsaAlias);
-            tsaURI = PKCS7.getTimestampingURI(tsaCert);
+            tsaURI = TimestampedSigner.getTimestampingURI(tsaCert);
         }
 
         if (tsaURI != null) {
@@ -1832,8 +1830,7 @@ public class Main {
         // validate it.
         try (JarFile check = new JarFile(signedJarFile)) {
             PKCS7 p7 = new PKCS7(check.getInputStream(check.getEntry(
-                    "META-INF/" + sigfile + "."
-                            + SignatureFileVerifier.getBlockExtension(privateKey))));
+                    "META-INF/" + sigfile + "." + privateKey.getAlgorithm())));
             Timestamp ts = null;
             try {
                 SignerInfo si = p7.getSignerInfos()[0];

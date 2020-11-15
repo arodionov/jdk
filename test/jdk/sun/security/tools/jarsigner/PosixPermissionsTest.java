@@ -32,21 +32,15 @@
  */
 
 import java.net.URI;
-import java.nio.file.FileSystem;
-import java.nio.file.FileSystems;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
+import java.nio.file.*;
 import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.PosixFilePermissions;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import jdk.test.lib.SecurityTools;
 
 public class PosixPermissionsTest {
+
     private static List<String> perms = List.of(
             "---------",
             "r--------",
@@ -83,13 +77,16 @@ public class PosixPermissionsTest {
         "protected by the signature.";
 
     public static void main(String[] args) throws Exception {
-        createFiles();
+        if (!FileSystems.getDefault().supportedFileAttributeViews().contains("posix")) {
+            System.out.println("No posix support. Skipping");
+            return;
+        }
 
+        createFiles();
         // check permissions before signing
         verifyFilePermissions(ZIPURI, true);
         verifyFilePermissions(JARURI, false);
 
-        // generate key for signing
         SecurityTools.keytool(
                 "-genkey",
                 "-keyalg", "RSA",
@@ -101,7 +98,6 @@ public class PosixPermissionsTest {
                 "-validity", "365")
                 .shouldHaveExitValue(0);
 
-        // sign zip file - expect warning
         SecurityTools.jarsigner(
                 "-keystore", "examplekeystore",
                 "-verbose", ZIPFILENAME,
@@ -111,12 +107,11 @@ public class PosixPermissionsTest {
                 .shouldHaveExitValue(0)
                 .shouldContain(WARNING_MSG);
 
-        // recheck permissions after signing
+        // zip file now signed. Recheck file permissions
         verifyFilePermissions(ZIPURI, true);
 
-        // sign jar file - expect no warning
-        SecurityTools.jarsigner(
-                "-keystore", "examplekeystore",
+        // sign jar file - no posix warning message expected
+        SecurityTools.jarsigner("-keystore", "examplekeystore",
                 "-verbose", JARFILENAME,
                 "-storepass", "password",
                 "-keypass", "password",
@@ -124,12 +119,10 @@ public class PosixPermissionsTest {
                 .shouldHaveExitValue(0)
                 .shouldNotContain(WARNING_MSG);
 
-        // recheck permissions after signing
+        // default attributes expected
         verifyFilePermissions(JARURI, false);
 
-        // verify zip file - expect warning
-        SecurityTools.jarsigner(
-                "-keystore", "examplekeystore",
+        SecurityTools.jarsigner("-keystore", "examplekeystore",
                 "-storepass", "password",
                 "-keypass", "password",
                 "-verbose",
@@ -137,9 +130,8 @@ public class PosixPermissionsTest {
                 .shouldHaveExitValue(0)
                 .shouldContain(WARNING_MSG);
 
-        // verify jar file - expect no warning
-        SecurityTools.jarsigner(
-                "-keystore", "examplekeystore",
+        // no warning expected for regular jar file
+        SecurityTools.jarsigner("-keystore", "examplekeystore",
                 "-storepass", "password",
                 "-keypass", "password",
                 "-verbose",

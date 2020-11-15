@@ -37,7 +37,6 @@
 #include "compiler/compileBroker.hpp"
 #include "compiler/disassembler.hpp"
 #include "interpreter/interpreter.hpp"
-#include "jvmtifiles/jvmti.h"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
@@ -2145,8 +2144,6 @@ static int check_pending_signals() {
       }
     } while (threadIsSuspended);
   }
-  ShouldNotReachHere();
-  return 0; // Satisfy compiler
 }
 
 int os::signal_wait() {
@@ -2357,7 +2354,7 @@ static inline void report_error(Thread* t, DWORD exception_code,
                                 address addr, void* siginfo, void* context) {
   VMError::report_and_die(t, exception_code, addr, siginfo, context);
 
-  // If UseOSErrorReporting, this will return here and save the error file
+  // If UseOsErrorReporting, this will return here and save the error file
   // somewhere where we can find it in the minidump.
 }
 
@@ -3140,7 +3137,7 @@ void os::split_reserved_memory(char *base, size_t size, size_t split) {
 // Multiple threads can race in this code but it's not possible to unmap small sections of
 // virtual space to get requested alignment, like posix-like os's.
 // Windows prevents multiple thread from remapping over each other so this loop is thread-safe.
-static char* map_or_reserve_memory_aligned(size_t size, size_t alignment, int file_desc) {
+char* os::reserve_memory_aligned(size_t size, size_t alignment, int file_desc) {
   assert((alignment & (os::vm_allocation_granularity() - 1)) == 0,
          "Alignment must be a multiple of allocation granularity (page size)");
   assert((size & (alignment -1)) == 0, "size must be 'alignment' aligned");
@@ -3151,9 +3148,7 @@ static char* map_or_reserve_memory_aligned(size_t size, size_t alignment, int fi
   char* aligned_base = NULL;
 
   do {
-    char* extra_base = file_desc != -1 ?
-      os::map_memory_to_file(extra_size, file_desc) :
-      os::reserve_memory(extra_size);
+    char* extra_base = os::reserve_memory_with_fd(extra_size, file_desc);
     if (extra_base == NULL) {
       return NULL;
     }
@@ -3166,21 +3161,11 @@ static char* map_or_reserve_memory_aligned(size_t size, size_t alignment, int fi
       os::release_memory(extra_base, extra_size);
     }
 
-    aligned_base = file_desc != -1 ?
-      os::attempt_map_memory_to_file_at(aligned_base, size, file_desc) :
-      os::attempt_reserve_memory_at(aligned_base, size);
+    aligned_base = os::attempt_reserve_memory_at(aligned_base, size, file_desc);
 
   } while (aligned_base == NULL);
 
   return aligned_base;
-}
-
-char* os::reserve_memory_aligned(size_t size, size_t alignment) {
-  return map_or_reserve_memory_aligned(size, alignment, -1 /* file_desc */);
-}
-
-char* os::map_memory_to_file_aligned(size_t size, size_t alignment, int fd) {
-  return map_or_reserve_memory_aligned(size, alignment, fd);
 }
 
 char* os::pd_reserve_memory(size_t bytes) {
@@ -3220,7 +3205,7 @@ char* os::pd_attempt_reserve_memory_at(char* addr, size_t bytes) {
   return res;
 }
 
-char* os::pd_attempt_map_memory_to_file_at(char* requested_addr, size_t bytes, int file_desc) {
+char* os::pd_attempt_reserve_memory_at(char* requested_addr, size_t bytes, int file_desc) {
   assert(file_desc >= 0, "file_desc is not valid");
   return map_memory_to_file(requested_addr, bytes, file_desc);
 }

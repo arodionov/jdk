@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,9 @@
 
 package sun.net.www;
 
+import java.net.URL;
+import java.util.*;
 import java.io.*;
-import java.util.concurrent.locks.ReentrantLock;
 import sun.net.ProgressSource;
 import sun.net.www.http.ChunkedInputStream;
 
@@ -43,7 +44,6 @@ public class MeteredStream extends FilterInputStream {
     protected long markedCount = 0;
     protected int markLimit = -1;
     protected ProgressSource pi;
-    private final ReentrantLock readLock = new ReentrantLock();
 
     public MeteredStream(InputStream is, ProgressSource pi, long expected)
     {
@@ -57,9 +57,7 @@ public class MeteredStream extends FilterInputStream {
         }
     }
 
-    private final void justRead(long n) throws IOException {
-        assert isLockHeldByCurrentThread();
-
+    private final void justRead(long n) throws IOException   {
         if (n == -1) {
 
             /*
@@ -101,7 +99,6 @@ public class MeteredStream extends FilterInputStream {
      * Returns true if the mark is valid, false otherwise
      */
     private boolean isMarked() {
-        assert isLockHeldByCurrentThread();
 
         if (markLimit < 0) {
             return false;
@@ -116,130 +113,94 @@ public class MeteredStream extends FilterInputStream {
         return true;
     }
 
-    public int read() throws java.io.IOException {
-        lock();
-        try {
-            if (closed) return -1;
-            int c = in.read();
-            if (c != -1) {
-                justRead(1);
-            } else {
-                justRead(c);
-            }
-            return c;
-        } finally {
-            unlock();
+    public synchronized int read() throws java.io.IOException {
+        if (closed) {
+            return -1;
         }
+        int c = in.read();
+        if (c != -1) {
+            justRead(1);
+        } else {
+            justRead(c);
+        }
+        return c;
     }
 
-    public int read(byte b[], int off, int len)
+    public synchronized int read(byte b[], int off, int len)
                 throws java.io.IOException {
-        lock();
-        try {
-            if (closed) return -1;
-
-            int n = in.read(b, off, len);
-            justRead(n);
-            return n;
-        } finally {
-            unlock();
+        if (closed) {
+            return -1;
         }
+        int n = in.read(b, off, len);
+        justRead(n);
+        return n;
     }
 
-    public long skip(long n) throws IOException {
-        lock();
-        try {
-            // REMIND: what does skip do on EOF????
-            if (closed) return 0;
+    public synchronized long skip(long n) throws IOException {
 
-            if (in instanceof ChunkedInputStream) {
-                n = in.skip(n);
-            } else {
-                // just skip min(n, num_bytes_left)
-                long min = (n > expected - count) ? expected - count : n;
-                n = in.skip(min);
-            }
-            justRead(n);
-            return n;
-        } finally {
-            unlock();
+        // REMIND: what does skip do on EOF????
+        if (closed) {
+            return 0;
         }
+
+        if (in instanceof ChunkedInputStream) {
+            n = in.skip(n);
+        }
+        else {
+            // just skip min(n, num_bytes_left)
+            long min = (n > expected - count) ? expected - count: n;
+            n = in.skip(min);
+        }
+        justRead(n);
+        return n;
     }
 
     public void close() throws IOException {
-        lock();
-        try {
-            if (closed) return;
-            if (pi != null)
-                pi.finishTracking();
-
-            closed = true;
-            in.close();
-        } finally {
-            unlock();
+        if (closed) {
+            return;
         }
+        if (pi != null)
+            pi.finishTracking();
+
+        closed = true;
+        in.close();
     }
 
-    public int available() throws IOException {
-        lock();
-        try {
-            return closed ? 0 : in.available();
-        } finally {
-            unlock();
-        }
+    public synchronized int available() throws IOException {
+        return closed ? 0: in.available();
     }
 
-    public void mark(int readLimit) {
-        lock();
-        try {
-            if (closed) return;
-            super.mark(readLimit);
-
-            /*
-             * mark the count to restore upon reset
-             */
-            markedCount = count;
-            markLimit = readLimit;
-        } finally {
-            unlock();
+    public synchronized void mark(int readLimit) {
+        if (closed) {
+            return;
         }
+        super.mark(readLimit);
+
+        /*
+         * mark the count to restore upon reset
+         */
+        markedCount = count;
+        markLimit = readLimit;
     }
 
-    public void reset() throws IOException {
-        lock();
-        try {
-            if (closed) return;
-            if (!isMarked()) {
-                throw new IOException("Resetting to an invalid mark");
-            }
-
-            count = markedCount;
-            super.reset();
-        } finally {
-            unlock();
+    public synchronized void reset() throws IOException {
+        if (closed) {
+            return;
         }
+
+        if (!isMarked()) {
+            throw new IOException ("Resetting to an invalid mark");
+        }
+
+        count = markedCount;
+        super.reset();
     }
 
     public boolean markSupported() {
-        lock();
-        try {
-            if (closed) return false;
-            return super.markSupported();
-        } finally {
-            unlock();
+        if (closed) {
+            return false;
         }
-    }
-
-    public final void lock() {
-        readLock.lock();
-    }
-
-    public final void unlock() {
-        readLock.unlock();
-    }
-
-    public final boolean isLockHeldByCurrentThread() {
-        return readLock.isHeldByCurrentThread();
+        return super.markSupported();
     }
 
     @SuppressWarnings("deprecation")

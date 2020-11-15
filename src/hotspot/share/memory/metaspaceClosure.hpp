@@ -105,7 +105,7 @@ public:
   //         Symbol*     bar() { return (Symbol*)    _obj; }
   //
   // [2] All Array<T> dimensions are statically declared.
-  class Ref : public CHeapObj<mtMetaspace> {
+  class Ref : public CHeapObj<mtInternal> {
     Writability _writability;
     bool _keep_after_pushing;
     Ref* _next;

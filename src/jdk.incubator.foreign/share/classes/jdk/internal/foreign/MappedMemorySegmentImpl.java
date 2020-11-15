@@ -25,19 +25,18 @@
 
 package jdk.internal.foreign;
 
-import jdk.incubator.foreign.MemorySegment;
+import jdk.incubator.foreign.MappedMemorySegment;
+import jdk.internal.access.JavaNioAccess;
+import jdk.internal.access.SharedSecrets;
 import jdk.internal.access.foreign.UnmapperProxy;
-import jdk.internal.misc.ScopedMemoryAccess;
 import sun.nio.ch.FileChannelImpl;
 
-import java.io.FileDescriptor;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.OpenOption;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.util.Optional;
 
 /**
  * Implementation for a mapped memory segments. A mapped memory segment is a native memory segment, which
@@ -45,11 +44,9 @@ import java.util.Optional;
  * memory mapped segment, such as the file descriptor associated with the mapping. This information is crucial
  * in order to correctly reconstruct a byte buffer object from the segment (see {@link #makeByteBuffer()}).
  */
-public class MappedMemorySegmentImpl extends NativeMemorySegmentImpl {
+public class MappedMemorySegmentImpl extends NativeMemorySegmentImpl implements MappedMemorySegment {
 
     private final UnmapperProxy unmapper;
-
-    static ScopedMemoryAccess SCOPED_MEMORY_ACCESS = ScopedMemoryAccess.getScopedMemoryAccess();
 
     MappedMemorySegmentImpl(long min, UnmapperProxy unmapper, long length, int mask, MemoryScope scope) {
         super(min, length, mask, scope);
@@ -58,6 +55,7 @@ public class MappedMemorySegmentImpl extends NativeMemorySegmentImpl {
 
     @Override
     ByteBuffer makeByteBuffer() {
+        JavaNioAccess nioAccess = SharedSecrets.getJavaNioAccess();
         return nioAccess.newMappedByteBuffer(unmapper, min, (int)length, null, this);
     }
 
@@ -80,40 +78,33 @@ public class MappedMemorySegmentImpl extends NativeMemorySegmentImpl {
     }
 
     @Override
-    public boolean isMapped() {
-        return true;
-    }
-
-    // support for mapped segments
-
-    public MemorySegment segment() {
-        return MappedMemorySegmentImpl.this;
-    }
-
     public void load() {
-        SCOPED_MEMORY_ACCESS.load(scope, min, unmapper.isSync(), length);
+        nioAccess.load(min, unmapper.isSync(), length);
     }
 
+    @Override
     public void unload() {
-        SCOPED_MEMORY_ACCESS.unload(scope, min, unmapper.isSync(), length);
+        nioAccess.unload(min, unmapper.isSync(), length);
     }
 
+    @Override
     public boolean isLoaded() {
-        return SCOPED_MEMORY_ACCESS.isLoaded(scope, min, unmapper.isSync(), length);
+        return nioAccess.isLoaded(min, unmapper.isSync(), length);
     }
 
+    @Override
     public void force() {
-        SCOPED_MEMORY_ACCESS.force(scope, unmapper.fileDescriptor(), min, unmapper.isSync(), 0, length);
+        nioAccess.force(unmapper.fileDescriptor(), min, unmapper.isSync(), 0, length);
     }
 
     // factories
 
-    public static MemorySegment makeMappedSegment(Path path, long bytesOffset, long bytesSize, FileChannel.MapMode mapMode) throws IOException {
+    public static MappedMemorySegment makeMappedSegment(Path path, long bytesOffset, long bytesSize, FileChannel.MapMode mapMode) throws IOException {
         if (bytesSize < 0) throw new IllegalArgumentException("Requested bytes size must be >= 0.");
         if (bytesOffset < 0) throw new IllegalArgumentException("Requested bytes offset must be >= 0.");
         try (FileChannelImpl channelImpl = (FileChannelImpl)FileChannel.open(path, openOptions(mapMode))) {
             UnmapperProxy unmapperProxy = channelImpl.mapInternal(mapMode, bytesOffset, bytesSize);
-            MemoryScope scope = MemoryScope.createConfined(null, unmapperProxy::unmap, null);
+            MemoryScope scope = MemoryScope.create(null, unmapperProxy::unmap);
             int modes = defaultAccessModes(bytesSize);
             if (mapMode == FileChannel.MapMode.READ_ONLY) {
                 modes &= ~WRITE;

@@ -24,11 +24,8 @@
  */
 package java.lang.invoke;
 
-import jdk.internal.access.foreign.MemorySegmentProxy;
-import jdk.internal.misc.ScopedMemoryAccess;
+import jdk.internal.access.foreign.MemoryAddressProxy;
 import jdk.internal.vm.annotation.ForceInline;
-
-import java.lang.ref.Reference;
 
 import java.util.Objects;
 
@@ -36,38 +33,11 @@ import static java.lang.invoke.MethodHandleStatics.UNSAFE;
 
 #warn
 
-final class MemoryAccessVarHandle$Type$Helper extends MemoryAccessVarHandleBase {
+final class MemoryAccessVarHandle$Type$Helper {
 
     static final boolean BE = UNSAFE.isBigEndian();
-    
-    static final ScopedMemoryAccess SCOPED_MEMORY_ACCESS = ScopedMemoryAccess.getScopedMemoryAccess();
 
     static final int VM_ALIGN = $BoxType$.BYTES - 1;
-
-    static final VarForm FORM = new VarForm(MemoryAccessVarHandle$Type$Helper.class, MemorySegmentProxy.class, $type$.class, long.class);
-
-    MemoryAccessVarHandle$Type$Helper(boolean skipAlignmentMaskCheck, boolean be, long length, long alignmentMask, boolean exact) {
-        super(FORM, skipAlignmentMaskCheck, be, length, alignmentMask, exact);
-    }
-
-    @Override
-    final MethodType accessModeTypeUncached(VarHandle.AccessType accessType) {
-        return accessType.accessModeType(MemorySegmentProxy.class, $type$.class, long.class);
-    }
-
-    @Override
-    public MemoryAccessVarHandle$Type$Helper withInvokeExactBehavior() {
-        return hasInvokeExactBehavior() ?
-                this :
-                new MemoryAccessVarHandle$Type$Helper(skipAlignmentMaskCheck, be, length, alignmentMask, true);
-    }
-
-    @Override
-    public MemoryAccessVarHandle$Type$Helper withInvokeBehavior() {
-        return !hasInvokeExactBehavior() ?
-                this :
-                new MemoryAccessVarHandle$Type$Helper(skipAlignmentMaskCheck, be, length, alignmentMask, true);
-    }
 
 #if[floatingPoint]
     @ForceInline
@@ -96,15 +66,15 @@ final class MemoryAccessVarHandle$Type$Helper extends MemoryAccessVarHandleBase 
 #end[floatingPoint]
 
     @ForceInline
-    static MemorySegmentProxy checkAddress(Object obb, long offset, long length, boolean ro) {
-        MemorySegmentProxy oo = (MemorySegmentProxy)Objects.requireNonNull(obb);
+    static MemoryAddressProxy checkAddress(Object obb, long offset, long length, boolean ro) {
+        MemoryAddressProxy oo = (MemoryAddressProxy)Objects.requireNonNull(obb);
         oo.checkAccess(offset, length, ro);
         return oo;
     }
-
+    
     @ForceInline
-    static long offset(boolean skipAlignmentMaskCheck, MemorySegmentProxy bb, long offset, long alignmentMask) {
-        long address = offsetNoVMAlignCheck(skipAlignmentMaskCheck, bb, offset, alignmentMask);
+    static long offset(MemoryAddressProxy bb, long offset, long alignmentMask) {
+        long address = offsetNoVMAlignCheck(bb, offset, alignmentMask);
         if ((address & VM_ALIGN) != 0) {
             throw MemoryAccessVarHandleBase.newIllegalStateExceptionForMisalignedAccess(address);
         }
@@ -112,66 +82,60 @@ final class MemoryAccessVarHandle$Type$Helper extends MemoryAccessVarHandleBase 
     }
 
     @ForceInline
-    static long offsetNoVMAlignCheck(boolean skipAlignmentMaskCheck, MemorySegmentProxy bb, long offset, long alignmentMask) {
+    static long offsetNoVMAlignCheck(MemoryAddressProxy bb, long offset, long alignmentMask) {
         long base = bb.unsafeGetOffset();
         long address = base + offset;
-        if (skipAlignmentMaskCheck) {
-            //note: the offset portion has already been aligned-checked, by construction
-            if ((base & alignmentMask) != 0) {
-                throw MemoryAccessVarHandleBase.newIllegalStateExceptionForMisalignedAccess(address);
-            }
-        } else {
-            if ((address & alignmentMask) != 0) {
-                throw MemoryAccessVarHandleBase.newIllegalStateExceptionForMisalignedAccess(address);
-            }
+        //note: the offset portion has already been aligned-checked, by construction
+        if ((base & alignmentMask) != 0) {
+            throw MemoryAccessVarHandleBase.newIllegalStateExceptionForMisalignedAccess(address);
         }
         return address;
     }
-
+    
     @ForceInline
-    static $type$ get(VarHandle ob, Object obb, long base) {
+    static $type$ get0(VarHandle ob, Object obb, long base) {
         MemoryAccessVarHandleBase handle = (MemoryAccessVarHandleBase)ob;
-        MemorySegmentProxy bb = checkAddress(obb, base, handle.length, true);
+        MemoryAddressProxy bb = checkAddress(obb, base, handle.length, true);
 #if[floatingPoint]
-        $rawType$ rawValue = SCOPED_MEMORY_ACCESS.get$RawType$Unaligned(bb.scope(),
+        $rawType$ rawValue = UNSAFE.get$RawType$Unaligned(
                 bb.unsafeGetBase(),
-                offsetNoVMAlignCheck(handle.skipAlignmentMaskCheck, bb, base, handle.alignmentMask),
+                offsetNoVMAlignCheck(bb, base, handle.alignmentMask),
                 handle.be);
         return $Type$.$rawType$BitsTo$Type$(rawValue);
 #else[floatingPoint]
 #if[byte]
-        return SCOPED_MEMORY_ACCESS.get$Type$(bb.scope(),
+        return UNSAFE.get$Type$(
                 bb.unsafeGetBase(),
-                offsetNoVMAlignCheck(handle.skipAlignmentMaskCheck, bb, base, handle.alignmentMask));
+                offsetNoVMAlignCheck(bb, base, handle.alignmentMask));
 #else[byte]
-        return SCOPED_MEMORY_ACCESS.get$Type$Unaligned(bb.scope(),
+        return UNSAFE.get$Type$Unaligned(
                 bb.unsafeGetBase(),
-                offsetNoVMAlignCheck(handle.skipAlignmentMaskCheck, bb, base, handle.alignmentMask),
+                offsetNoVMAlignCheck(bb, base, handle.alignmentMask),
                 handle.be);
 #end[byte]
 #end[floatingPoint]
     }
 
     @ForceInline
-    static void set(VarHandle ob, Object obb, long base, $type$ value) {
+    static void set0(VarHandle ob, Object obb, long base, $type$ value) {
         MemoryAccessVarHandleBase handle = (MemoryAccessVarHandleBase)ob;
-        MemorySegmentProxy bb = checkAddress(obb, base, handle.length, false);
+        MemoryAddressProxy bb = checkAddress(obb, base, handle.length, false);
 #if[floatingPoint]
-        SCOPED_MEMORY_ACCESS.put$RawType$Unaligned(bb.scope(),
+        UNSAFE.put$RawType$Unaligned(
                 bb.unsafeGetBase(),
-                offsetNoVMAlignCheck(handle.skipAlignmentMaskCheck, bb, base, handle.alignmentMask),
+                offsetNoVMAlignCheck(bb, base, handle.alignmentMask),
                 $Type$.$type$ToRaw$RawType$Bits(value),
                 handle.be);
 #else[floatingPoint]
 #if[byte]
-        SCOPED_MEMORY_ACCESS.put$Type$(bb.scope(),
+        UNSAFE.put$Type$(
                 bb.unsafeGetBase(),
-                offsetNoVMAlignCheck(handle.skipAlignmentMaskCheck, bb, base, handle.alignmentMask),
+                offsetNoVMAlignCheck(bb, base, handle.alignmentMask),
                 value);
 #else[byte]
-        SCOPED_MEMORY_ACCESS.put$Type$Unaligned(bb.scope(),
+        UNSAFE.put$Type$Unaligned(
                 bb.unsafeGetBase(),
-                offsetNoVMAlignCheck(handle.skipAlignmentMaskCheck, bb, base, handle.alignmentMask),
+                offsetNoVMAlignCheck(bb, base, handle.alignmentMask),
                 value,
                 handle.be);
 #end[byte]
@@ -179,234 +143,234 @@ final class MemoryAccessVarHandle$Type$Helper extends MemoryAccessVarHandleBase 
     }
 
     @ForceInline
-    static $type$ getVolatile(VarHandle ob, Object obb, long base) {
+    static $type$ getVolatile0(VarHandle ob, Object obb, long base) {
         MemoryAccessVarHandleBase handle = (MemoryAccessVarHandleBase)ob;
-        MemorySegmentProxy bb = checkAddress(obb, base, handle.length, true);
+        MemoryAddressProxy bb = checkAddress(obb, base, handle.length, true);
         return convEndian(handle.be,
-                          SCOPED_MEMORY_ACCESS.get$RawType$Volatile(bb.scope(),
+                          UNSAFE.get$RawType$Volatile(
                                   bb.unsafeGetBase(),
-                                  offset(handle.skipAlignmentMaskCheck, bb, base, handle.alignmentMask)));
+                                  offset(bb, base, handle.alignmentMask)));
     }
 
     @ForceInline
-    static void setVolatile(VarHandle ob, Object obb, long base, $type$ value) {
+    static void setVolatile0(VarHandle ob, Object obb, long base, $type$ value) {
         MemoryAccessVarHandleBase handle = (MemoryAccessVarHandleBase)ob;
-        MemorySegmentProxy bb = checkAddress(obb, base, handle.length, false);
-        SCOPED_MEMORY_ACCESS.put$RawType$Volatile(bb.scope(),
+        MemoryAddressProxy bb = checkAddress(obb, base, handle.length, false);
+        UNSAFE.put$RawType$Volatile(
                 bb.unsafeGetBase(),
-                offset(handle.skipAlignmentMaskCheck, bb, base, handle.alignmentMask),
+                offset(bb, base, handle.alignmentMask),
                 convEndian(handle.be, value));
     }
 
     @ForceInline
-    static $type$ getAcquire(VarHandle ob, Object obb, long base) {
+    static $type$ getAcquire0(VarHandle ob, Object obb, long base) {
         MemoryAccessVarHandleBase handle = (MemoryAccessVarHandleBase)ob;
-        MemorySegmentProxy bb = checkAddress(obb, base, handle.length, true);
+        MemoryAddressProxy bb = checkAddress(obb, base, handle.length, true);
         return convEndian(handle.be,
-                          SCOPED_MEMORY_ACCESS.get$RawType$Acquire(bb.scope(),
+                          UNSAFE.get$RawType$Acquire(
                                   bb.unsafeGetBase(),
-                                  offset(handle.skipAlignmentMaskCheck, bb, base, handle.alignmentMask)));
+                                  offset(bb, base, handle.alignmentMask)));
     }
 
     @ForceInline
-    static void setRelease(VarHandle ob, Object obb, long base, $type$ value) {
+    static void setRelease0(VarHandle ob, Object obb, long base, $type$ value) {
         MemoryAccessVarHandleBase handle = (MemoryAccessVarHandleBase)ob;
-        MemorySegmentProxy bb = checkAddress(obb, base, handle.length, false);
-        SCOPED_MEMORY_ACCESS.put$RawType$Release(bb.scope(),
+        MemoryAddressProxy bb = checkAddress(obb, base, handle.length, false);
+        UNSAFE.put$RawType$Release(
                 bb.unsafeGetBase(),
-                offset(handle.skipAlignmentMaskCheck, bb, base, handle.alignmentMask),
+                offset(bb, base, handle.alignmentMask),
                 convEndian(handle.be, value));
     }
 
     @ForceInline
-    static $type$ getOpaque(VarHandle ob, Object obb, long base) {
+    static $type$ getOpaque0(VarHandle ob, Object obb, long base) {
         MemoryAccessVarHandleBase handle = (MemoryAccessVarHandleBase)ob;
-        MemorySegmentProxy bb = checkAddress(obb, base, handle.length, true);
+        MemoryAddressProxy bb = checkAddress(obb, base, handle.length, true);
         return convEndian(handle.be,
-                          SCOPED_MEMORY_ACCESS.get$RawType$Opaque(bb.scope(),
+                          UNSAFE.get$RawType$Opaque(
                                   bb.unsafeGetBase(),
-                                  offset(handle.skipAlignmentMaskCheck, bb, base, handle.alignmentMask)));
+                                  offset(bb, base, handle.alignmentMask)));
     }
 
     @ForceInline
-    static void setOpaque(VarHandle ob, Object obb, long base, $type$ value) {
+    static void setOpaque0(VarHandle ob, Object obb, long base, $type$ value) {
         MemoryAccessVarHandleBase handle = (MemoryAccessVarHandleBase)ob;
-        MemorySegmentProxy bb = checkAddress(obb, base, handle.length, false);
-        SCOPED_MEMORY_ACCESS.put$RawType$Opaque(bb.scope(),
+        MemoryAddressProxy bb = checkAddress(obb, base, handle.length, false);
+        UNSAFE.put$RawType$Opaque(
                 bb.unsafeGetBase(),
-                offset(handle.skipAlignmentMaskCheck, bb, base, handle.alignmentMask),
+                offset(bb, base, handle.alignmentMask),
                 convEndian(handle.be, value));
     }
 #if[CAS]
 
     @ForceInline
-    static boolean compareAndSet(VarHandle ob, Object obb, long base, $type$ expected, $type$ value) {
+    static boolean compareAndSet0(VarHandle ob, Object obb, long base, $type$ expected, $type$ value) {
         MemoryAccessVarHandleBase handle = (MemoryAccessVarHandleBase)ob;
-        MemorySegmentProxy bb = checkAddress(obb, base, handle.length, false);
-        return SCOPED_MEMORY_ACCESS.compareAndSet$RawType$(bb.scope(),
+        MemoryAddressProxy bb = checkAddress(obb, base, handle.length, false);
+        return UNSAFE.compareAndSet$RawType$(
                 bb.unsafeGetBase(),
-                offset(handle.skipAlignmentMaskCheck, bb, base, handle.alignmentMask),
+                offset(bb, base, handle.alignmentMask),
                 convEndian(handle.be, expected), convEndian(handle.be, value));
     }
 
     @ForceInline
-    static $type$ compareAndExchange(VarHandle ob, Object obb, long base, $type$ expected, $type$ value) {
+    static $type$ compareAndExchange0(VarHandle ob, Object obb, long base, $type$ expected, $type$ value) {
         MemoryAccessVarHandleBase handle = (MemoryAccessVarHandleBase)ob;
-        MemorySegmentProxy bb = checkAddress(obb, base, handle.length, false);
+        MemoryAddressProxy bb = checkAddress(obb, base, handle.length, false);
         return convEndian(handle.be,
-                          SCOPED_MEMORY_ACCESS.compareAndExchange$RawType$(bb.scope(),
+                          UNSAFE.compareAndExchange$RawType$(
                                   bb.unsafeGetBase(),
-                                  offset(handle.skipAlignmentMaskCheck, bb, base, handle.alignmentMask),
+                                  offset(bb, base, handle.alignmentMask),
                                   convEndian(handle.be, expected), convEndian(handle.be, value)));
     }
 
     @ForceInline
-    static $type$ compareAndExchangeAcquire(VarHandle ob, Object obb, long base, $type$ expected, $type$ value) {
+    static $type$ compareAndExchangeAcquire0(VarHandle ob, Object obb, long base, $type$ expected, $type$ value) {
         MemoryAccessVarHandleBase handle = (MemoryAccessVarHandleBase)ob;
-        MemorySegmentProxy bb = checkAddress(obb, base, handle.length, false);
+        MemoryAddressProxy bb = checkAddress(obb, base, handle.length, false);
         return convEndian(handle.be,
-                          SCOPED_MEMORY_ACCESS.compareAndExchange$RawType$Acquire(bb.scope(),
+                          UNSAFE.compareAndExchange$RawType$Acquire(
                                   bb.unsafeGetBase(),
-                                  offset(handle.skipAlignmentMaskCheck, bb, base, handle.alignmentMask),
+                                  offset(bb, base, handle.alignmentMask),
                                   convEndian(handle.be, expected), convEndian(handle.be, value)));
     }
 
     @ForceInline
-    static $type$ compareAndExchangeRelease(VarHandle ob, Object obb, long base, $type$ expected, $type$ value) {
+    static $type$ compareAndExchangeRelease0(VarHandle ob, Object obb, long base, $type$ expected, $type$ value) {
         MemoryAccessVarHandleBase handle = (MemoryAccessVarHandleBase)ob;
-        MemorySegmentProxy bb = checkAddress(obb, base, handle.length, false);
+        MemoryAddressProxy bb = checkAddress(obb, base, handle.length, false);
         return convEndian(handle.be,
-                          SCOPED_MEMORY_ACCESS.compareAndExchange$RawType$Release(bb.scope(),
+                          UNSAFE.compareAndExchange$RawType$Release(
                                   bb.unsafeGetBase(),
-                                  offset(handle.skipAlignmentMaskCheck, bb, base, handle.alignmentMask),
+                                  offset(bb, base, handle.alignmentMask),
                                   convEndian(handle.be, expected), convEndian(handle.be, value)));
     }
 
     @ForceInline
-    static boolean weakCompareAndSetPlain(VarHandle ob, Object obb, long base, $type$ expected, $type$ value) {
+    static boolean weakCompareAndSetPlain0(VarHandle ob, Object obb, long base, $type$ expected, $type$ value) {
         MemoryAccessVarHandleBase handle = (MemoryAccessVarHandleBase)ob;
-        MemorySegmentProxy bb = checkAddress(obb, base, handle.length, false);
-        return SCOPED_MEMORY_ACCESS.weakCompareAndSet$RawType$Plain(bb.scope(),
+        MemoryAddressProxy bb = checkAddress(obb, base, handle.length, false);
+        return UNSAFE.weakCompareAndSet$RawType$Plain(
                 bb.unsafeGetBase(),
-                offset(handle.skipAlignmentMaskCheck, bb, base, handle.alignmentMask),
+                offset(bb, base, handle.alignmentMask),
                 convEndian(handle.be, expected), convEndian(handle.be, value));
     }
 
     @ForceInline
-    static boolean weakCompareAndSet(VarHandle ob, Object obb, long base, $type$ expected, $type$ value) {
+    static boolean weakCompareAndSet0(VarHandle ob, Object obb, long base, $type$ expected, $type$ value) {
         MemoryAccessVarHandleBase handle = (MemoryAccessVarHandleBase)ob;
-        MemorySegmentProxy bb = checkAddress(obb, base, handle.length, false);
-        return SCOPED_MEMORY_ACCESS.weakCompareAndSet$RawType$(bb.scope(),
+        MemoryAddressProxy bb = checkAddress(obb, base, handle.length, false);
+        return UNSAFE.weakCompareAndSet$RawType$(
                 bb.unsafeGetBase(),
-                offset(handle.skipAlignmentMaskCheck, bb, base, handle.alignmentMask),
+                offset(bb, base, handle.alignmentMask),
                 convEndian(handle.be, expected), convEndian(handle.be, value));
     }
 
     @ForceInline
-    static boolean weakCompareAndSetAcquire(VarHandle ob, Object obb, long base, $type$ expected, $type$ value) {
+    static boolean weakCompareAndSetAcquire0(VarHandle ob, Object obb, long base, $type$ expected, $type$ value) {
         MemoryAccessVarHandleBase handle = (MemoryAccessVarHandleBase)ob;
-        MemorySegmentProxy bb = checkAddress(obb, base, handle.length, false);
-        return SCOPED_MEMORY_ACCESS.weakCompareAndSet$RawType$Acquire(bb.scope(),
+        MemoryAddressProxy bb = checkAddress(obb, base, handle.length, false);
+        return UNSAFE.weakCompareAndSet$RawType$Acquire(
                 bb.unsafeGetBase(),
-                offset(handle.skipAlignmentMaskCheck, bb, base, handle.alignmentMask),
+                offset(bb, base, handle.alignmentMask),
                 convEndian(handle.be, expected), convEndian(handle.be, value));
     }
 
     @ForceInline
-    static boolean weakCompareAndSetRelease(VarHandle ob, Object obb, long base, $type$ expected, $type$ value) {
+    static boolean weakCompareAndSetRelease0(VarHandle ob, Object obb, long base, $type$ expected, $type$ value) {
         MemoryAccessVarHandleBase handle = (MemoryAccessVarHandleBase)ob;
-        MemorySegmentProxy bb = checkAddress(obb, base, handle.length, false);
-        return SCOPED_MEMORY_ACCESS.weakCompareAndSet$RawType$Release(bb.scope(),
+        MemoryAddressProxy bb = checkAddress(obb, base, handle.length, false);
+        return UNSAFE.weakCompareAndSet$RawType$Release(
                 bb.unsafeGetBase(),
-                offset(handle.skipAlignmentMaskCheck, bb, base, handle.alignmentMask),
+                offset(bb, base, handle.alignmentMask),
                 convEndian(handle.be, expected), convEndian(handle.be, value));
     }
 
     @ForceInline
-    static $type$ getAndSet(VarHandle ob, Object obb, long base, $type$ value) {
+    static $type$ getAndSet0(VarHandle ob, Object obb, long base, $type$ value) {
         MemoryAccessVarHandleBase handle = (MemoryAccessVarHandleBase)ob;
-        MemorySegmentProxy bb = checkAddress(obb, base, handle.length, false);
+        MemoryAddressProxy bb = checkAddress(obb, base, handle.length, false);
         return convEndian(handle.be,
-                          SCOPED_MEMORY_ACCESS.getAndSet$RawType$(bb.scope(),
+                          UNSAFE.getAndSet$RawType$(
                                   bb.unsafeGetBase(),
-                                  offset(handle.skipAlignmentMaskCheck, bb, base, handle.alignmentMask),
+                                  offset(bb, base, handle.alignmentMask),
                                   convEndian(handle.be, value)));
     }
 
     @ForceInline
-    static $type$ getAndSetAcquire(VarHandle ob, Object obb, long base, $type$ value) {
+    static $type$ getAndSetAcquire0(VarHandle ob, Object obb, long base, $type$ value) {
         MemoryAccessVarHandleBase handle = (MemoryAccessVarHandleBase)ob;
-        MemorySegmentProxy bb = checkAddress(obb, base, handle.length, false);
+        MemoryAddressProxy bb = checkAddress(obb, base, handle.length, false);
         return convEndian(handle.be,
-                          SCOPED_MEMORY_ACCESS.getAndSet$RawType$Acquire(bb.scope(),
+                          UNSAFE.getAndSet$RawType$Acquire(
                                   bb.unsafeGetBase(),
-                                  offset(handle.skipAlignmentMaskCheck, bb, base, handle.alignmentMask),
+                                  offset(bb, base, handle.alignmentMask),
                                   convEndian(handle.be, value)));
     }
 
     @ForceInline
-    static $type$ getAndSetRelease(VarHandle ob, Object obb, long base, $type$ value) {
+    static $type$ getAndSetRelease0(VarHandle ob, Object obb, long base, $type$ value) {
         MemoryAccessVarHandleBase handle = (MemoryAccessVarHandleBase)ob;
-        MemorySegmentProxy bb = checkAddress(obb, base, handle.length, false);
+        MemoryAddressProxy bb = checkAddress(obb, base, handle.length, false);
         return convEndian(handle.be,
-                          SCOPED_MEMORY_ACCESS.getAndSet$RawType$Release(bb.scope(),
+                          UNSAFE.getAndSet$RawType$Release(
                                   bb.unsafeGetBase(),
-                                  offset(handle.skipAlignmentMaskCheck, bb, base, handle.alignmentMask),
+                                  offset(bb, base, handle.alignmentMask),
                                   convEndian(handle.be, value)));
     }
 #end[CAS]
 #if[AtomicAdd]
 
     @ForceInline
-    static $type$ getAndAdd(VarHandle ob, Object obb, long base, $type$ delta) {
+    static $type$ getAndAdd0(VarHandle ob, Object obb, long base, $type$ delta) {
         MemoryAccessVarHandleBase handle = (MemoryAccessVarHandleBase)ob;
-        MemorySegmentProxy bb = checkAddress(obb, base, handle.length, false);
+        MemoryAddressProxy bb = checkAddress(obb, base, handle.length, false);
         if (handle.be == BE) {
-            return SCOPED_MEMORY_ACCESS.getAndAdd$RawType$(bb.scope(),
+            return UNSAFE.getAndAdd$RawType$(
                     bb.unsafeGetBase(),
-                    offset(handle.skipAlignmentMaskCheck, bb, base, handle.alignmentMask),
+                    offset(bb, base, handle.alignmentMask),
                     delta);
         } else {
-            return getAndAddConvEndianWithCAS(bb, offset(handle.skipAlignmentMaskCheck, bb, base, handle.alignmentMask), delta);
+            return getAndAddConvEndianWithCAS(bb, offset(bb, base, handle.alignmentMask), delta);
         }
     }
 
     @ForceInline
-    static $type$ getAndAddAcquire(VarHandle ob, Object obb, long base, $type$ delta) {
+    static $type$ getAndAddAcquire0(VarHandle ob, Object obb, long base, $type$ delta) {
         MemoryAccessVarHandleBase handle = (MemoryAccessVarHandleBase)ob;
-        MemorySegmentProxy bb = checkAddress(obb, base, handle.length, false);
+        MemoryAddressProxy bb = checkAddress(obb, base, handle.length, false);
         if (handle.be == BE) {
-            return SCOPED_MEMORY_ACCESS.getAndAdd$RawType$Acquire(bb.scope(),
+            return UNSAFE.getAndAdd$RawType$Acquire(
                     bb.unsafeGetBase(),
-                    offset(handle.skipAlignmentMaskCheck, bb, base, handle.alignmentMask),
+                    offset(bb, base, handle.alignmentMask),
                     delta);
         } else {
-            return getAndAddConvEndianWithCAS(bb, offset(handle.skipAlignmentMaskCheck, bb, base, handle.alignmentMask), delta);
+            return getAndAddConvEndianWithCAS(bb, offset(bb, base, handle.alignmentMask), delta);
         }
     }
 
     @ForceInline
-    static $type$ getAndAddRelease(VarHandle ob, Object obb, long base, $type$ delta) {
+    static $type$ getAndAddRelease0(VarHandle ob, Object obb, long base, $type$ delta) {
         MemoryAccessVarHandleBase handle = (MemoryAccessVarHandleBase)ob;
-        MemorySegmentProxy bb = checkAddress(obb, base, handle.length, false);
+        MemoryAddressProxy bb = checkAddress(obb, base, handle.length, false);
         if (handle.be == BE) {
-            return SCOPED_MEMORY_ACCESS.getAndAdd$RawType$Release(bb.scope(),
+            return UNSAFE.getAndAdd$RawType$Release(
                     bb.unsafeGetBase(),
-                    offset(handle.skipAlignmentMaskCheck, bb, base, handle.alignmentMask),
+                    offset(bb, base, handle.alignmentMask),
                     delta);
         } else {
-            return getAndAddConvEndianWithCAS(bb, offset(handle.skipAlignmentMaskCheck, bb, base, handle.alignmentMask), delta);
+            return getAndAddConvEndianWithCAS(bb, offset(bb, base, handle.alignmentMask), delta);
         }
     }
 
     @ForceInline
-    static $type$ getAndAddConvEndianWithCAS(MemorySegmentProxy bb, long offset, $type$ delta) {
+    static $type$ getAndAddConvEndianWithCAS(MemoryAddressProxy bb, long offset, $type$ delta) {
         $type$ nativeExpectedValue, expectedValue;
         Object base = bb.unsafeGetBase();
         do {
-            nativeExpectedValue = SCOPED_MEMORY_ACCESS.get$RawType$Volatile(bb.scope(),base, offset);
+            nativeExpectedValue = UNSAFE.get$RawType$Volatile(base, offset);
             expectedValue = $RawBoxType$.reverseBytes(nativeExpectedValue);
-        } while (!SCOPED_MEMORY_ACCESS.weakCompareAndSet$RawType$(bb.scope(),base, offset,
+        } while (!UNSAFE.weakCompareAndSet$RawType$(base, offset,
                 nativeExpectedValue, $RawBoxType$.reverseBytes(expectedValue + delta)));
         return expectedValue;
     }
@@ -414,164 +378,164 @@ final class MemoryAccessVarHandle$Type$Helper extends MemoryAccessVarHandleBase 
 #if[Bitwise]
 
     @ForceInline
-    static $type$ getAndBitwiseOr(VarHandle ob, Object obb, long base, $type$ value) {
+    static $type$ getAndBitwiseOr0(VarHandle ob, Object obb, long base, $type$ value) {
         MemoryAccessVarHandleBase handle = (MemoryAccessVarHandleBase)ob;
-        MemorySegmentProxy bb = checkAddress(obb, base, handle.length, false);
+        MemoryAddressProxy bb = checkAddress(obb, base, handle.length, false);
         if (handle.be == BE) {
-            return SCOPED_MEMORY_ACCESS.getAndBitwiseOr$RawType$(bb.scope(),
+            return UNSAFE.getAndBitwiseOr$RawType$(
                     bb.unsafeGetBase(),
-                    offset(handle.skipAlignmentMaskCheck, bb, base, handle.alignmentMask),
+                    offset(bb, base, handle.alignmentMask),
                     value);
         } else {
-            return getAndBitwiseOrConvEndianWithCAS(bb, offset(handle.skipAlignmentMaskCheck, bb, base, handle.alignmentMask), value);
+            return getAndBitwiseOrConvEndianWithCAS(bb, offset(bb, base, handle.alignmentMask), value);
         }
     }
 
     @ForceInline
-    static $type$ getAndBitwiseOrRelease(VarHandle ob, Object obb, long base, $type$ value) {
+    static $type$ getAndBitwiseOrRelease0(VarHandle ob, Object obb, long base, $type$ value) {
         MemoryAccessVarHandleBase handle = (MemoryAccessVarHandleBase)ob;
-        MemorySegmentProxy bb = checkAddress(obb, base, handle.length, false);
+        MemoryAddressProxy bb = checkAddress(obb, base, handle.length, false);
         if (handle.be == BE) {
-            return SCOPED_MEMORY_ACCESS.getAndBitwiseOr$RawType$Release(bb.scope(),
+            return UNSAFE.getAndBitwiseOr$RawType$Release(
                     bb.unsafeGetBase(),
-                    offset(handle.skipAlignmentMaskCheck, bb, base, handle.alignmentMask),
+                    offset(bb, base, handle.alignmentMask),
                     value);
         } else {
-            return getAndBitwiseOrConvEndianWithCAS(bb, offset(handle.skipAlignmentMaskCheck, bb, base, handle.alignmentMask), value);
+            return getAndBitwiseOrConvEndianWithCAS(bb, offset(bb, base, handle.alignmentMask), value);
         }
     }
 
     @ForceInline
-    static $type$ getAndBitwiseOrAcquire(VarHandle ob, Object obb, long base, $type$ value) {
+    static $type$ getAndBitwiseOrAcquire0(VarHandle ob, Object obb, long base, $type$ value) {
         MemoryAccessVarHandleBase handle = (MemoryAccessVarHandleBase)ob;
-        MemorySegmentProxy bb = checkAddress(obb, base, handle.length, false);
+        MemoryAddressProxy bb = checkAddress(obb, base, handle.length, false);
         if (handle.be == BE) {
-            return SCOPED_MEMORY_ACCESS.getAndBitwiseOr$RawType$Acquire(bb.scope(),
+            return UNSAFE.getAndBitwiseOr$RawType$Acquire(
                     bb.unsafeGetBase(),
-                    offset(handle.skipAlignmentMaskCheck, bb, base, handle.alignmentMask),
+                    offset(bb, base, handle.alignmentMask),
                     value);
         } else {
-            return getAndBitwiseOrConvEndianWithCAS(bb, offset(handle.skipAlignmentMaskCheck, bb, base, handle.alignmentMask), value);
+            return getAndBitwiseOrConvEndianWithCAS(bb, offset(bb, base, handle.alignmentMask), value);
         }
     }
 
     @ForceInline
-    static $type$ getAndBitwiseOrConvEndianWithCAS(MemorySegmentProxy bb, long offset, $type$ value) {
+    static $type$ getAndBitwiseOrConvEndianWithCAS(MemoryAddressProxy bb, long offset, $type$ value) {
         $type$ nativeExpectedValue, expectedValue;
         Object base = bb.unsafeGetBase();
         do {
-            nativeExpectedValue = SCOPED_MEMORY_ACCESS.get$RawType$Volatile(bb.scope(),base, offset);
+            nativeExpectedValue = UNSAFE.get$RawType$Volatile(base, offset);
             expectedValue = $RawBoxType$.reverseBytes(nativeExpectedValue);
-        } while (!SCOPED_MEMORY_ACCESS.weakCompareAndSet$RawType$(bb.scope(),base, offset,
+        } while (!UNSAFE.weakCompareAndSet$RawType$(base, offset,
                 nativeExpectedValue, $RawBoxType$.reverseBytes(expectedValue | value)));
         return expectedValue;
     }
 
     @ForceInline
-    static $type$ getAndBitwiseAnd(VarHandle ob, Object obb, long base, $type$ value) {
+    static $type$ getAndBitwiseAnd0(VarHandle ob, Object obb, long base, $type$ value) {
         MemoryAccessVarHandleBase handle = (MemoryAccessVarHandleBase)ob;
-        MemorySegmentProxy bb = checkAddress(obb, base, handle.length, false);
+        MemoryAddressProxy bb = checkAddress(obb, base, handle.length, false);
         if (handle.be == BE) {
-            return SCOPED_MEMORY_ACCESS.getAndBitwiseAnd$RawType$(bb.scope(),
+            return UNSAFE.getAndBitwiseAnd$RawType$(
                     bb.unsafeGetBase(),
-                    offset(handle.skipAlignmentMaskCheck, bb, base, handle.alignmentMask),
+                    offset(bb, base, handle.alignmentMask),
                     value);
         } else {
-            return getAndBitwiseAndConvEndianWithCAS(bb, offset(handle.skipAlignmentMaskCheck, bb, base, handle.alignmentMask), value);
+            return getAndBitwiseAndConvEndianWithCAS(bb, offset(bb, base, handle.alignmentMask), value);
         }
     }
 
     @ForceInline
-    static $type$ getAndBitwiseAndRelease(VarHandle ob, Object obb, long base, $type$ value) {
+    static $type$ getAndBitwiseAndRelease0(VarHandle ob, Object obb, long base, $type$ value) {
         MemoryAccessVarHandleBase handle = (MemoryAccessVarHandleBase)ob;
-        MemorySegmentProxy bb = checkAddress(obb, base, handle.length, false);
+        MemoryAddressProxy bb = checkAddress(obb, base, handle.length, false);
         if (handle.be == BE) {
-            return SCOPED_MEMORY_ACCESS.getAndBitwiseAnd$RawType$Release(bb.scope(),
+            return UNSAFE.getAndBitwiseAnd$RawType$Release(
                     bb.unsafeGetBase(),
-                    offset(handle.skipAlignmentMaskCheck, bb, base, handle.alignmentMask),
+                    offset(bb, base, handle.alignmentMask),
                     value);
         } else {
-            return getAndBitwiseAndConvEndianWithCAS(bb, offset(handle.skipAlignmentMaskCheck, bb, base, handle.alignmentMask), value);
+            return getAndBitwiseAndConvEndianWithCAS(bb, offset(bb, base, handle.alignmentMask), value);
         }
     }
 
     @ForceInline
-    static $type$ getAndBitwiseAndAcquire(VarHandle ob, Object obb, long base, $type$ value) {
+    static $type$ getAndBitwiseAndAcquire0(VarHandle ob, Object obb, long base, $type$ value) {
         MemoryAccessVarHandleBase handle = (MemoryAccessVarHandleBase)ob;
-        MemorySegmentProxy bb = checkAddress(obb, base, handle.length, false);
+        MemoryAddressProxy bb = checkAddress(obb, base, handle.length, false);
         if (handle.be == BE) {
-            return SCOPED_MEMORY_ACCESS.getAndBitwiseAnd$RawType$Acquire(bb.scope(),
+            return UNSAFE.getAndBitwiseAnd$RawType$Acquire(
                     bb.unsafeGetBase(),
-                    offset(handle.skipAlignmentMaskCheck, bb, base, handle.alignmentMask),
+                    offset(bb, base, handle.alignmentMask),
                     value);
         } else {
-            return getAndBitwiseAndConvEndianWithCAS(bb, offset(handle.skipAlignmentMaskCheck, bb, base, handle.alignmentMask), value);
+            return getAndBitwiseAndConvEndianWithCAS(bb, offset(bb, base, handle.alignmentMask), value);
         }
     }
 
     @ForceInline
-    static $type$ getAndBitwiseAndConvEndianWithCAS(MemorySegmentProxy bb, long offset, $type$ value) {
+    static $type$ getAndBitwiseAndConvEndianWithCAS(MemoryAddressProxy bb, long offset, $type$ value) {
         $type$ nativeExpectedValue, expectedValue;
         Object base = bb.unsafeGetBase();
         do {
-            nativeExpectedValue = SCOPED_MEMORY_ACCESS.get$RawType$Volatile(bb.scope(),base, offset);
+            nativeExpectedValue = UNSAFE.get$RawType$Volatile(base, offset);
             expectedValue = $RawBoxType$.reverseBytes(nativeExpectedValue);
-        } while (!SCOPED_MEMORY_ACCESS.weakCompareAndSet$RawType$(bb.scope(),base, offset,
+        } while (!UNSAFE.weakCompareAndSet$RawType$(base, offset,
                 nativeExpectedValue, $RawBoxType$.reverseBytes(expectedValue & value)));
         return expectedValue;
     }
 
 
     @ForceInline
-    static $type$ getAndBitwiseXor(VarHandle ob, Object obb, long base, $type$ value) {
+    static $type$ getAndBitwiseXor0(VarHandle ob, Object obb, long base, $type$ value) {
         MemoryAccessVarHandleBase handle = (MemoryAccessVarHandleBase)ob;
-        MemorySegmentProxy bb = checkAddress(obb, base, handle.length, false);
+        MemoryAddressProxy bb = checkAddress(obb, base, handle.length, false);
         if (handle.be == BE) {
-            return SCOPED_MEMORY_ACCESS.getAndBitwiseXor$RawType$(bb.scope(),
+            return UNSAFE.getAndBitwiseXor$RawType$(
                     bb.unsafeGetBase(),
-                    offset(handle.skipAlignmentMaskCheck, bb, base, handle.alignmentMask),
+                    offset(bb, base, handle.alignmentMask),
                     value);
         } else {
-            return getAndBitwiseXorConvEndianWithCAS(bb, offset(handle.skipAlignmentMaskCheck, bb, base, handle.alignmentMask), value);
+            return getAndBitwiseXorConvEndianWithCAS(bb, offset(bb, base, handle.alignmentMask), value);
         }
     }
 
     @ForceInline
-    static $type$ getAndBitwiseXorRelease(VarHandle ob, Object obb, long base, $type$ value) {
+    static $type$ getAndBitwiseXorRelease0(VarHandle ob, Object obb, long base, $type$ value) {
         MemoryAccessVarHandleBase handle = (MemoryAccessVarHandleBase)ob;
-        MemorySegmentProxy bb = checkAddress(obb, base, handle.length, false);
+        MemoryAddressProxy bb = checkAddress(obb, base, handle.length, false);
         if (handle.be == BE) {
-            return SCOPED_MEMORY_ACCESS.getAndBitwiseXor$RawType$Release(bb.scope(),
+            return UNSAFE.getAndBitwiseXor$RawType$Release(
                     bb.unsafeGetBase(),
-                    offset(handle.skipAlignmentMaskCheck, bb, base, handle.alignmentMask),
+                    offset(bb, base, handle.alignmentMask),
                     value);
         } else {
-            return getAndBitwiseXorConvEndianWithCAS(bb, offset(handle.skipAlignmentMaskCheck, bb, base, handle.alignmentMask), value);
+            return getAndBitwiseXorConvEndianWithCAS(bb, offset(bb, base, handle.alignmentMask), value);
         }
     }
 
     @ForceInline
-    static $type$ getAndBitwiseXorAcquire(VarHandle ob, Object obb, long base, $type$ value) {
+    static $type$ getAndBitwiseXorAcquire0(VarHandle ob, Object obb, long base, $type$ value) {
         MemoryAccessVarHandleBase handle = (MemoryAccessVarHandleBase)ob;
-        MemorySegmentProxy bb = checkAddress(obb, base, handle.length, false);
+        MemoryAddressProxy bb = checkAddress(obb, base, handle.length, false);
         if (handle.be == BE) {
-            return SCOPED_MEMORY_ACCESS.getAndBitwiseXor$RawType$Acquire(bb.scope(),
+            return UNSAFE.getAndBitwiseXor$RawType$Acquire(
                     bb.unsafeGetBase(),
-                    offset(handle.skipAlignmentMaskCheck, bb, base, handle.alignmentMask),
+                    offset(bb, base, handle.alignmentMask),
                     value);
         } else {
-            return getAndBitwiseXorConvEndianWithCAS(bb, offset(handle.skipAlignmentMaskCheck, bb, base, handle.alignmentMask), value);
+            return getAndBitwiseXorConvEndianWithCAS(bb, offset(bb, base, handle.alignmentMask), value);
         }
     }
 
     @ForceInline
-    static $type$ getAndBitwiseXorConvEndianWithCAS(MemorySegmentProxy bb, long offset, $type$ value) {
+    static $type$ getAndBitwiseXorConvEndianWithCAS(MemoryAddressProxy bb, long offset, $type$ value) {
         $type$ nativeExpectedValue, expectedValue;
         Object base = bb.unsafeGetBase();
         do {
-            nativeExpectedValue = SCOPED_MEMORY_ACCESS.get$RawType$Volatile(bb.scope(),base, offset);
+            nativeExpectedValue = UNSAFE.get$RawType$Volatile(base, offset);
             expectedValue = $RawBoxType$.reverseBytes(nativeExpectedValue);
-        } while (!SCOPED_MEMORY_ACCESS.weakCompareAndSet$RawType$(bb.scope(),base, offset,
+        } while (!UNSAFE.weakCompareAndSet$RawType$(base, offset,
                 nativeExpectedValue, $RawBoxType$.reverseBytes(expectedValue ^ value)));
         return expectedValue;
     }

@@ -134,6 +134,10 @@ class FieldStreamBase : public StackObj {
     return field()->offset();
   }
 
+  int allocation_type() const {
+    return field()->allocation_type();
+  }
+
   void set_offset(int offset) {
     field()->set_offset(offset);
   }

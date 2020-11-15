@@ -31,7 +31,6 @@
 #include "interp_masm_ppc.hpp"
 #include "interpreter/interpreterRuntime.hpp"
 #include "oops/methodData.hpp"
-#include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/safepointMechanism.hpp"
@@ -224,7 +223,7 @@ void InterpreterMacroAssembler::dispatch_Lbyte_code(TosState state, Register byt
     address *sfpt_tbl = Interpreter::safept_table(state);
     if (table != sfpt_tbl) {
       Label dispatch;
-      ld(R0, in_bytes(Thread::polling_word_offset()), R16_thread);
+      ld(R0, in_bytes(Thread::polling_page_offset()), R16_thread);
       // Armed page has poll_bit set, if poll bit is cleared just continue.
       andi_(R0, R0, SafepointMechanism::poll_bit());
       beq(CCR0, dispatch);
@@ -879,7 +878,8 @@ void InterpreterMacroAssembler::remove_activation(TosState state,
 //
 void InterpreterMacroAssembler::lock_object(Register monitor, Register object) {
   if (UseHeavyMonitors) {
-    call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter), monitor);
+    call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter),
+            monitor, /*check_for_exceptions=*/true);
   } else {
     // template code:
     //
@@ -980,7 +980,8 @@ void InterpreterMacroAssembler::lock_object(Register monitor, Register object) {
     // None of the above fast optimizations worked so we have to get into the
     // slow case of monitor enter.
     bind(slow_case);
-    call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter), monitor);
+    call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter),
+            monitor, /*check_for_exceptions=*/true);
     // }
     align(32, 12);
     bind(done);
@@ -994,7 +995,7 @@ void InterpreterMacroAssembler::lock_object(Register monitor, Register object) {
 //             which must be initialized with the object to lock.
 //
 // Throw IllegalMonitorException if object is not locked by current thread.
-void InterpreterMacroAssembler::unlock_object(Register monitor) {
+void InterpreterMacroAssembler::unlock_object(Register monitor, bool check_for_exceptions) {
   if (UseHeavyMonitors) {
     call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorexit), monitor);
   } else {
@@ -2400,7 +2401,8 @@ void InterpreterMacroAssembler::notify_method_entry() {
     lwz(R0, in_bytes(JavaThread::interp_only_mode_offset()), R16_thread);
     cmpwi(CCR0, R0, 0);
     beq(CCR0, jvmti_post_done);
-    call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::post_method_entry));
+    call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::post_method_entry),
+            /*check_exceptions=*/true);
 
     bind(jvmti_post_done);
   }
@@ -2435,7 +2437,8 @@ void InterpreterMacroAssembler::notify_method_exit(bool is_native_method, TosSta
     cmpwi(CCR0, R0, 0);
     beq(CCR0, jvmti_post_done);
     if (!is_native_method) { push(state); } // Expose tos to GC.
-    call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::post_method_exit), check_exceptions);
+    call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::post_method_exit),
+            /*check_exceptions=*/check_exceptions);
     if (!is_native_method) { pop(state); }
 
     align(32, 12);

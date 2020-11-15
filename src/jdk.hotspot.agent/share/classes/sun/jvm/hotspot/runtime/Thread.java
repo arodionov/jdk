@@ -121,7 +121,6 @@ public class Thread extends VMObject {
   public boolean   isJvmtiAgentThread()          { return false; }
   public boolean   isWatcherThread()             { return false; }
   public boolean   isServiceThread()             { return false; }
-  public boolean   isMonitorDeflationThread()    { return false; }
 
   /** Memory operations */
   public void oopsDo(AddressVisitor oopVisitor) {

@@ -142,7 +142,6 @@ class AllocatedObj {
   f(mtSafepoint,      "Safepoint")                                                   \
   f(mtSynchronizer,   "Synchronization")                                             \
   f(mtServiceability, "Serviceability")                                              \
-  f(mtMetaspace,      "Metaspace")                                                   \
   f(mtNone,           "Unknown")                                                     \
   //end
 

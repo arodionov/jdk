@@ -47,7 +47,7 @@ import jdk.jpackage.test.JPackageCommand;
  * @library /test/lib
  * @key jpackagePlatformPackage
  * @build jdk.jpackage.test.*
- * @modules jdk.jpackage/jdk.jpackage.internal
+ * @modules jdk.incubator.jpackage/jdk.incubator.jpackage.internal
  * @compile MultiLauncherTwoPhaseTest.java
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=MultiLauncherTwoPhaseTest

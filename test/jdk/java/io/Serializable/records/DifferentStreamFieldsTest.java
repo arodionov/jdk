@@ -23,26 +23,38 @@
 
 /*
  * @test
- * @bug 8246774
  * @summary Checks that the appropriate value is given to the canonical ctr
- * @library /test/lib
- * @run testng DifferentStreamFieldsTest
- * @run testng/othervm/java.security.policy=empty_security.policy DifferentStreamFieldsTest
+ * @compile --enable-preview -source ${jdk.version} DifferentStreamFieldsTest.java
+ * @run testng/othervm --enable-preview DifferentStreamFieldsTest
+ * @run testng/othervm/java.security.policy=empty_security.policy --enable-preview DifferentStreamFieldsTest
  */
+
+import org.testng.annotations.DataProvider;
+import org.testng.annotations.Test;
+
+import static java.io.ObjectStreamConstants.SC_SERIALIZABLE;
+import static java.io.ObjectStreamConstants.STREAM_MAGIC;
+import static java.io.ObjectStreamConstants.STREAM_VERSION;
+import static java.io.ObjectStreamConstants.TC_CLASSDESC;
+import static java.io.ObjectStreamConstants.TC_ENDBLOCKDATA;
+import static java.io.ObjectStreamConstants.TC_NULL;
+import static java.io.ObjectStreamConstants.TC_OBJECT;
+import static java.io.ObjectStreamConstants.TC_STRING;
+import static java.lang.System.out;
+import static org.testng.Assert.assertEquals;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InvalidClassException;
 import java.io.InvalidObjectException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
-import jdk.test.lib.serial.SerialObjectBuilder;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
-import static java.lang.System.out;
-import static org.testng.Assert.assertEquals;
+import java.io.UncheckedIOException;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 /**
  * Checks that the appropriate value is given to the canonical ctr.
@@ -102,7 +114,7 @@ public class DifferentStreamFieldsTest {
     throws Exception {
         out.println("\n---");
         assert clazz.isRecord();
-        byte[] bytes = SerialObjectBuilder
+        byte[] bytes = SerialByteStreamBuilder
             .newBuilder(clazz.getName())
             .build();
 
@@ -111,7 +123,7 @@ public class DifferentStreamFieldsTest {
         Object actualXValue = clazz.getDeclaredMethod("x").invoke(obj);
         assertEquals(actualXValue, expectedXValue);
 
-        bytes = SerialObjectBuilder
+        bytes = SerialByteStreamBuilder
             .newBuilder(clazz.getName())
             .addPrimitiveField("y", int.class, 5)  // stream junk
             .build();
@@ -131,7 +143,7 @@ public class DifferentStreamFieldsTest {
                    double h, Object i, String j, long[]k, Object[]l)
             implements Serializable {}
 
-        byte[] bytes = SerialObjectBuilder
+        byte[] bytes = SerialByteStreamBuilder
             .newBuilder(R15.class.getName())
             .addPrimitiveField("x", int.class, 5)  // stream junk
             .build();
@@ -161,7 +173,7 @@ public class DifferentStreamFieldsTest {
             var r = new R(5);
             byte[] OOSBytes = serialize(r);
 
-            byte[] builderBytes = SerialObjectBuilder
+            byte[] builderBytes = SerialByteStreamBuilder
                 .newBuilder(R.class.getName())
                 .addPrimitiveField("x", int.class, 5)
                 .build();
@@ -179,7 +191,7 @@ public class DifferentStreamFieldsTest {
             var deser1 = deserialize(OOSBytes);
             assertEquals(deser1, r);
 
-            byte[] builderBytes = SerialObjectBuilder
+            byte[] builderBytes = SerialByteStreamBuilder
                 .newBuilder(R.class.getName())
                 .addPrimitiveField("x", int.class, 7)
                 .addPrimitiveField("y", int.class, 8)
@@ -188,7 +200,7 @@ public class DifferentStreamFieldsTest {
             var deser2 = deserialize(builderBytes);
             assertEquals(deser2, deser1);
 
-            builderBytes = SerialObjectBuilder
+            builderBytes = SerialByteStreamBuilder
                 .newBuilder(R.class.getName())
                 .addPrimitiveField("y", int.class, 8)  // reverse order
                 .addPrimitiveField("x", int.class, 7)
@@ -196,7 +208,7 @@ public class DifferentStreamFieldsTest {
             deser2 = deserialize(builderBytes);
             assertEquals(deser2, deser1);
 
-            builderBytes = SerialObjectBuilder
+            builderBytes = SerialByteStreamBuilder
                 .newBuilder(R.class.getName())
                 .addPrimitiveField("w", int.class, 6) // additional fields
                 .addPrimitiveField("x", int.class, 7)
@@ -211,7 +223,7 @@ public class DifferentStreamFieldsTest {
             deser1 = deserialize(OOSBytes);
             assertEquals(deser1, r);
 
-            builderBytes = SerialObjectBuilder
+            builderBytes = SerialByteStreamBuilder
                 .newBuilder(R.class.getName())
                 .addPrimitiveField("y", int.class, 0)
                 .addPrimitiveField("x", int.class, 0)
@@ -219,7 +231,7 @@ public class DifferentStreamFieldsTest {
             deser2 = deserialize(builderBytes);
             assertEquals(deser2, deser1);
 
-            builderBytes = SerialObjectBuilder
+            builderBytes = SerialByteStreamBuilder
                 .newBuilder(R.class.getName())  // no field values
                 .build();
             deser2 = deserialize(builderBytes);
@@ -237,7 +249,7 @@ public class DifferentStreamFieldsTest {
         var deser1 = deserialize(serialize(r));
         assertEquals(deser1, r);
 
-        byte[] builderBytes = SerialObjectBuilder
+        byte[] builderBytes = SerialByteStreamBuilder
             .newBuilder(Str.class.getName())
             .addField("part1", String.class, "Hello")
             .addField("part2", String.class, "World!")
@@ -246,7 +258,7 @@ public class DifferentStreamFieldsTest {
         var deser2 = deserialize(builderBytes);
         assertEquals(deser2, deser1);
 
-        builderBytes = SerialObjectBuilder
+        builderBytes = SerialByteStreamBuilder
             .newBuilder(Str.class.getName())
             .addField("cruft", String.class, "gg")
             .addField("part1", String.class, "Hello")
@@ -268,7 +280,7 @@ public class DifferentStreamFieldsTest {
             assertEquals(deser1.ints(), r.ints());
             assertEquals(deser1.longs(), r.longs());
 
-            byte[] builderBytes = SerialObjectBuilder
+            byte[] builderBytes = SerialByteStreamBuilder
                 .newBuilder(IntArray.class.getName())
                 .addField("ints", int[].class, new int[]{5, 4, 3, 2, 1})
                 .addField("longs", long[].class, new long[]{9L})
@@ -284,7 +296,7 @@ public class DifferentStreamFieldsTest {
             StrArray deser1 = deserialize(serialize(r));
             assertEquals(deser1.stringArray(), r.stringArray());
 
-            byte[] builderBytes = SerialObjectBuilder
+            byte[] builderBytes = SerialByteStreamBuilder
                 .newBuilder(StrArray.class.getName())
                 .addField("stringArray", String[].class, new String[]{"foo", "bar"})
                 .build();
@@ -305,7 +317,7 @@ public class DifferentStreamFieldsTest {
             var deser1 = deserialize(serialize(r));
             assertEquals(deser1, r);
 
-            byte[] builderBytes = SerialObjectBuilder
+            byte[] builderBytes = SerialByteStreamBuilder
                 .newBuilder(NumberHolder.class.getName())
                 .addField("n", Integer.class, 123)
                 .build();
@@ -321,7 +333,7 @@ public class DifferentStreamFieldsTest {
             var deser1 = deserialize(serialize(r));
             assertEquals(deser1, r);
 
-            byte[] builderBytes = SerialObjectBuilder
+            byte[] builderBytes = SerialByteStreamBuilder
                 .newBuilder(IntegerHolder.class.getName())
                 .addField("i", Number.class, 123)
                 .build();
@@ -341,7 +353,7 @@ public class DifferentStreamFieldsTest {
         var deser1 = deserialize(serialize(r));
         assertEquals(deser1, r);
 
-        byte[] builderBytes = SerialObjectBuilder
+        byte[] builderBytes = SerialByteStreamBuilder
             .newBuilder(StringHolder.class.getName())
             .addField("s", Integer.class, 123)
             .build();
@@ -365,7 +377,7 @@ public class DifferentStreamFieldsTest {
         var deser1 = deserialize(serialize(r));
         assertEquals(deser1, r);
 
-        byte[] builderBytes = SerialObjectBuilder
+        byte[] builderBytes = SerialByteStreamBuilder
             .newBuilder(IntHolder.class.getName())
             .addPrimitiveField("i", long.class, 123L)
             .build();
@@ -393,5 +405,159 @@ public class DifferentStreamFieldsTest {
         ByteArrayInputStream bais = new ByteArrayInputStream(streamBytes);
         ObjectInputStream ois = new ObjectInputStream(bais);
         return (T) ois.readObject();
+    }
+
+    static class SerialByteStreamBuilder {
+
+        private final ObjectOutputStream objectOutputStream;
+        private final ByteArrayOutputStream byteArrayOutputStream;
+
+        record NameAndType<T>(String name, Class<T>type) {}
+
+        private String className;
+        private final LinkedHashMap<NameAndType<?>, Object> primFields = new LinkedHashMap<>();
+        private final LinkedHashMap<NameAndType<?>, Object> objectFields = new LinkedHashMap<>();
+
+        private SerialByteStreamBuilder() {
+            try {
+                byteArrayOutputStream = new ByteArrayOutputStream();
+                objectOutputStream = new ObjectOutputStream(byteArrayOutputStream);
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        }
+
+        public static SerialByteStreamBuilder newBuilder(String className) {
+            return (new SerialByteStreamBuilder()).className(className);
+        }
+
+        private SerialByteStreamBuilder className(String className) {
+            this.className = className;
+            return this;
+        }
+
+        public <T> SerialByteStreamBuilder addPrimitiveField(String name, Class<T> type, T value) {
+            if (!type.isPrimitive())
+                throw new IllegalArgumentException("Unexpected non-primitive field: " + type);
+            primFields.put(new NameAndType<>(name, type), value);
+            return this;
+        }
+
+        public <T> SerialByteStreamBuilder addField(String name, Class<T> type, T value) {
+            if (type.isPrimitive())
+                throw new IllegalArgumentException("Unexpected primitive field: " + type);
+            objectFields.put(new NameAndType<>(name, type), value);
+            return this;
+        }
+
+        private static int getPrimitiveSignature(Class<?> cl) {
+            if (cl == Integer.TYPE) return 'I';
+            else if (cl == Byte.TYPE) return 'B';
+            else if (cl == Long.TYPE) return 'J';
+            else if (cl == Float.TYPE) return 'F';
+            else if (cl == Double.TYPE) return 'D';
+            else if (cl == Short.TYPE) return 'S';
+            else if (cl == Character.TYPE) return 'C';
+            else if (cl == Boolean.TYPE) return 'Z';
+            else throw new InternalError();
+        }
+
+        private static void writeUTF(DataOutputStream out, String str) throws IOException {
+            int utflen = str.length(); // assume ASCII
+            assert utflen <= 0xFFFF;
+            out.writeShort(utflen);
+            out.writeBytes(str);
+        }
+
+        private void writePrimFieldsDesc(DataOutputStream out) throws IOException {
+            for (Map.Entry<NameAndType<?>, Object> entry : primFields.entrySet()) {
+                assert entry.getKey().type() != void.class;
+                out.writeByte(getPrimitiveSignature(entry.getKey().type())); // prim_typecode
+                out.writeUTF(entry.getKey().name());                         // fieldName
+            }
+        }
+
+        private void writePrimFieldsValues(DataOutputStream out) throws IOException {
+            for (Map.Entry<NameAndType<?>, Object> entry : primFields.entrySet()) {
+                Class<?> cl = entry.getKey().type();
+                Object value = entry.getValue();
+                if (cl == Integer.TYPE) out.writeInt((int) value);
+                else if (cl == Byte.TYPE) out.writeByte((byte) value);
+                else if (cl == Long.TYPE) out.writeLong((long) value);
+                else if (cl == Float.TYPE) out.writeFloat((float) value);
+                else if (cl == Double.TYPE) out.writeDouble((double) value);
+                else if (cl == Short.TYPE) out.writeShort((short) value);
+                else if (cl == Character.TYPE) out.writeChar((char) value);
+                else if (cl == Boolean.TYPE) out.writeBoolean((boolean) value);
+                else throw new InternalError();
+            }
+        }
+
+        private void writeObjectFieldDesc(DataOutputStream out) throws IOException {
+            for (Map.Entry<NameAndType<?>, Object> entry : objectFields.entrySet()) {
+                Class<?> cl = entry.getKey().type();
+                assert !cl.isPrimitive();
+                // obj_typecode
+                if (cl.isArray()) {
+                    out.writeByte('[');
+                } else {
+                    out.writeByte('L');
+                }
+                writeUTF(out, entry.getKey().name());
+                out.writeByte(TC_STRING);
+                writeUTF(out,
+                         (cl.isArray() ? cl.getName() : "L" + cl.getName() + ";")
+                             .replace('.', '/'));
+            }
+        }
+
+        private void writeObject(DataOutputStream out, Object value) throws IOException {
+            objectOutputStream.reset();
+            byteArrayOutputStream.reset();
+            objectOutputStream.writeUnshared(value);
+            out.write(byteArrayOutputStream.toByteArray());
+        }
+
+        private void writeObjectFieldValues(DataOutputStream out) throws IOException {
+            for (Map.Entry<NameAndType<?>, Object> entry : objectFields.entrySet()) {
+                Class<?> cl = entry.getKey().type();
+                assert !cl.isPrimitive();
+                if (cl == String.class) {
+                    out.writeByte(TC_STRING);
+                    writeUTF(out, (String) entry.getValue());
+                } else {
+                    writeObject(out, entry.getValue());
+                }
+            }
+        }
+
+        private int numFields() {
+            return primFields.size() + objectFields.size();
+        }
+
+        public byte[] build() {
+            try {
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                DataOutputStream dos = new DataOutputStream(baos);
+                dos.writeShort(STREAM_MAGIC);
+                dos.writeShort(STREAM_VERSION);
+                dos.writeByte(TC_OBJECT);
+                dos.writeByte(TC_CLASSDESC);
+                dos.writeUTF(className);
+                dos.writeLong(0L);
+                dos.writeByte(SC_SERIALIZABLE);
+                dos.writeShort(numFields());      // number of fields
+                writePrimFieldsDesc(dos);
+                writeObjectFieldDesc(dos);
+                dos.writeByte(TC_ENDBLOCKDATA);   // no annotations
+                dos.writeByte(TC_NULL);           // no superclasses
+                writePrimFieldsValues(dos);
+                writeObjectFieldValues(dos);
+                dos.close();
+                return baos.toByteArray();
+            } catch (IOException unexpected) {
+                throw new AssertionError(unexpected);
+            }
+        }
     }
 }

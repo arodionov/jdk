@@ -99,8 +99,10 @@ class Mutex : public CHeapObj<mtSynchronizer> {
   void no_safepoint_verifier   (Thread* thread, bool enable)          NOT_DEBUG_RETURN;
 
  public:
-  static const bool _allow_vm_block_flag        = true;
-  static const bool _as_suspend_equivalent_flag = true;
+  enum {
+    _allow_vm_block_flag        = true,
+    _as_suspend_equivalent_flag = true
+  };
 
   // Locks can be acquired with or without a safepoint check. NonJavaThreads do not follow
   // the safepoint protocol when acquiring locks.
@@ -122,17 +124,12 @@ class Mutex : public CHeapObj<mtSynchronizer> {
   // deadlock can occur. We should check this by noting which
   // locks are shared, and walk held locks during safepoint checking.
 
-  enum class SafepointCheckFlag {
+  enum SafepointCheckFlag {
     _safepoint_check_flag,
     _no_safepoint_check_flag
   };
-  // Bring the enumerator names into class scope.
-  static const SafepointCheckFlag _safepoint_check_flag =
-    SafepointCheckFlag::_safepoint_check_flag;
-  static const SafepointCheckFlag _no_safepoint_check_flag =
-    SafepointCheckFlag::_no_safepoint_check_flag;
 
-  enum class SafepointCheckRequired {
+  enum SafepointCheckRequired {
     _safepoint_check_never,       // Mutexes with this value will cause errors
                                   // when acquired by a JavaThread with a safepoint check.
     _safepoint_check_sometimes,   // A couple of special locks are acquired by JavaThreads sometimes
@@ -141,13 +138,6 @@ class Mutex : public CHeapObj<mtSynchronizer> {
     _safepoint_check_always       // Mutexes with this value will cause errors
                                   // when acquired by a JavaThread without a safepoint check.
   };
-  // Bring the enumerator names into class scope.
-  static const SafepointCheckRequired _safepoint_check_never =
-    SafepointCheckRequired::_safepoint_check_never;
-  static const SafepointCheckRequired _safepoint_check_sometimes =
-    SafepointCheckRequired::_safepoint_check_sometimes;
-  static const SafepointCheckRequired _safepoint_check_always =
-    SafepointCheckRequired::_safepoint_check_always;
 
   NOT_PRODUCT(SafepointCheckRequired _safepoint_check_required;)
 

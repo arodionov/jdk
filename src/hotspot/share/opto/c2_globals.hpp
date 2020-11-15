@@ -53,8 +53,8 @@
           "Randomize worklist traversal in IGVN")                           \
                                                                             \
   product(uint, StressSeed, 0, DIAGNOSTIC,                                  \
-          "Seed for randomized stress testing (if unset, a random one is "  \
-          "generated)")                                                     \
+          "Seed for IGVN stress testing (if unset, a random one is "        \
+          "generated")                                                      \
           range(0, max_juint)                                               \
                                                                             \
   develop(bool, StressMethodHandleLinkerInlining, false,                    \
@@ -359,6 +359,9 @@
   product_pd(intx, ConditionalMoveLimit,                                    \
           "Limit of ops to make speculative when using CMOVE")              \
           range(0, max_jint)                                                \
+                                                                            \
+  product(bool, UseRDPCForConstantTableBase, false,                         \
+          "Use Sparc RDPC instruction for the constant table base.")        \
                                                                             \
   notproduct(bool, PrintIdealGraph, false,                                  \
           "Print ideal graph to XML file / network interface. "             \
@@ -740,15 +743,6 @@
   product(bool, UseMontgomerySquareIntrinsic, false, DIAGNOSTIC,            \
           "Enables intrinsification of BigInteger.montgomerySquare()")      \
                                                                             \
-  product(bool, EnableVectorSupport, false, EXPERIMENTAL,                   \
-          "Enables VectorSupport intrinsics")                               \
-                                                                            \
-  product(bool, EnableVectorReboxing, false, EXPERIMENTAL,                  \
-          "Enables reboxing of vectors")                                    \
-                                                                            \
-  product(bool, EnableVectorAggressiveReboxing, false, EXPERIMENTAL,        \
-          "Enables aggressive reboxing of vectors")                         \
-                                                                            \
   product(bool, UseTypeSpeculation, true,                                   \
           "Speculatively propagate types from profiles")                    \
                                                                             \
@@ -784,13 +778,7 @@
           "Move predicates out of loops based on profiling data")           \
                                                                             \
   product(bool, ExpandSubTypeCheckAtParseTime, false, DIAGNOSTIC,           \
-          "Do not use subtype check macro node")                            \
-                                                                            \
-  develop(uintx, StressLongCountedLoop, 0,                                  \
-          "if > 0, convert int counted loops to long counted loops"         \
-          "to stress handling of long counted loops: run inner loop"        \
-          "for at most jint_max / StressLongCountedLoop")                   \
-          range(0, max_juint)                                               \
+          "Do not use subtype check macro node")
 
 // end of C2_FLAGS
 

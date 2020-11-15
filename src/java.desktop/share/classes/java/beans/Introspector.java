@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -364,7 +364,6 @@ public class Introspector {
      */
     public static void flushCaches() {
         ThreadGroupContext.getContext().clearBeanInfoCache();
-        ClassInfo.clear();
     }
 
     /**
@@ -388,7 +387,6 @@ public class Introspector {
             throw new NullPointerException();
         }
         ThreadGroupContext.getContext().removeBeanInfo(clz);
-        ClassInfo.remove(clz);
     }
 
     //======================================================================

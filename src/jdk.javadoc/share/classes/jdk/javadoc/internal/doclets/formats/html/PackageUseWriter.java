@@ -30,7 +30,6 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
-import javax.lang.model.element.Element;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 
@@ -62,6 +61,7 @@ public class PackageUseWriter extends SubWriterHolderWriter {
     final PackageElement packageElement;
     final SortedMap<String, Set<TypeElement>> usingPackageToUsedClasses = new TreeMap<>();
     final String packageUseTableSummary;
+    private final Navigation navBar;
 
     /**
      * Constructor.
@@ -99,6 +99,7 @@ public class PackageUseWriter extends SubWriterHolderWriter {
 
         packageUseTableSummary = resources.getText("doclet.Use_Table_Summary",
                 resources.getText("doclet.packages"));
+        this.navBar = new Navigation(packageElement, configuration, PageMode.USE, path);
     }
 
     /**
@@ -130,7 +131,11 @@ public class PackageUseWriter extends SubWriterHolderWriter {
             addPackageUse(mainContent);
         }
         bodyContents.addMainContent(mainContent);
-        bodyContents.setFooter(getFooter());
+        HtmlTree footer = HtmlTree.FOOTER();
+        navBar.setUserFooter(getUserHeaderFooter(false));
+        footer.add(navBar.getContent(Navigation.Position.BOTTOM));
+        addBottom(footer);
+        bodyContents.setFooter(footer);
         body.add(bodyContents);
         printHtmlDocument(null,
                 getDescription("use", packageElement),
@@ -160,7 +165,7 @@ public class PackageUseWriter extends SubWriterHolderWriter {
         Content caption = contents.getContent(
                 "doclet.ClassUse_Packages.that.use.0",
                 getPackageLink(packageElement, utils.getPackageName(packageElement)));
-        Table table = new Table(HtmlStyle.summaryTable)
+        Table table = new Table(HtmlStyle.useSummary, HtmlStyle.summaryTable)
                 .setCaption(caption)
                 .setHeader(getPackageTableHeader())
                 .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast);
@@ -199,7 +204,7 @@ public class PackageUseWriter extends SubWriterHolderWriter {
                     "doclet.ClassUse_Classes.in.0.used.by.1",
                     getPackageLink(packageElement, utils.getPackageName(packageElement)),
                     getPackageLink(usingPackage, utils.getPackageName(usingPackage)));
-            Table table = new Table(HtmlStyle.summaryTable)
+            Table table = new Table(HtmlStyle.useSummary, HtmlStyle.summaryTable)
                     .setCaption(caption)
                     .setHeader(classTableHeader)
                     .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast);
@@ -231,6 +236,13 @@ public class PackageUseWriter extends SubWriterHolderWriter {
         String name = packageElement.isUnnamed() ? "" : utils.getPackageName(packageElement);
         String title = resources.getText("doclet.Window_ClassUse_Header", packageText, name);
         HtmlTree bodyTree = getBody(getWindowTitle(title));
+        Content headerContent = new ContentBuilder();
+        addTop(headerContent);
+        Content linkContent = getModuleLink(utils.elementUtils.getModuleOf(packageElement),
+                contents.moduleLabel);
+        navBar.setNavLinkModule(linkContent);
+        navBar.setUserHeader(getUserHeaderFooter(true));
+        headerContent.add(navBar.getContent(Navigation.Position.TOP));
         ContentBuilder headingContent = new ContentBuilder();
         headingContent.add(contents.getContent("doclet.ClassUse_Title", packageText));
         headingContent.add(new HtmlTree(TagName.BR));
@@ -238,16 +250,8 @@ public class PackageUseWriter extends SubWriterHolderWriter {
         Content heading = HtmlTree.HEADING_TITLE(Headings.PAGE_TITLE_HEADING,
                 HtmlStyle.title, headingContent);
         Content div = HtmlTree.DIV(HtmlStyle.header, heading);
-        bodyContents.setHeader(getHeader(PageMode.USE, packageElement))
+        bodyContents.setHeader(headerContent)
                 .addMainContent(div);
         return bodyTree;
-    }
-
-    @Override
-    protected Navigation getNavBar(PageMode pageMode, Element element) {
-        Content linkContent = getModuleLink(utils.elementUtils.getModuleOf(element),
-                contents.moduleLabel);
-        return super.getNavBar(pageMode, element)
-                .setNavLinkModule(linkContent);
     }
 }

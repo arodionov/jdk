@@ -328,13 +328,17 @@ AwtFrame* AwtFrame::Create(jobject self, jobject parent)
                 frame->CreateHWnd(env, L"",
                                   style,
                                   exStyle,
-                                  x, y, width, height,
+                                  0, 0, 0, 0,
                                   hwndParent,
                                   NULL,
                                   ::GetSysColor(COLOR_WINDOWTEXT),
                                   ::GetSysColor(COLOR_WINDOWFRAME),
                                   self);
-                frame->RecalcNonClient();
+                /*
+                 * Reshape here instead of during create, so that a
+                 * WM_NCCALCSIZE is sent.
+                 */
+                frame->Reshape(x, y, width, height);
             }
         }
     } catch (...) {

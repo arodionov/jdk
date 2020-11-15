@@ -32,7 +32,6 @@
 #include "classfile/classLoader.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/javaClasses.inline.hpp"
-#include "classfile/javaThreadStatus.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "classfile/modules.hpp"
 #include "classfile/symbolTable.hpp"
@@ -4015,7 +4014,7 @@ static jint attach_current_thread(JavaVM *vm, void **penv, void *_args, bool dae
 
   // Set java thread status.
   java_lang_Thread::set_thread_status(thread->threadObj(),
-              JavaThreadStatus::RUNNABLE);
+              java_lang_Thread::RUNNABLE);
 
   // Notify the debugger
   if (JvmtiExport::should_post_thread_life()) {

@@ -35,7 +35,6 @@
 #include "oops/method.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/oop.inline.hpp"
-#include "prims/jvmtiExport.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -1907,7 +1906,7 @@ void TemplateTable::branch(bool is_jsr, bool is_wide)
   __ dispatch_only(vtos, /*generate_poll*/true);
 
   if (UseLoopCounter) {
-    if (ProfileInterpreter && !TieredCompilation) {
+    if (ProfileInterpreter) {
       // Out-of-line code to allocate method data oop.
       __ bind(profile_method);
       __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::profile_method));

@@ -80,6 +80,7 @@ import jdk.internal.module.SystemModuleFinders;
  * <p> A {@code ModuleFinder} is not required to be thread safe. </p>
  *
  * @since 9
+ * @spec JPMS
  */
 
 public interface ModuleFinder {

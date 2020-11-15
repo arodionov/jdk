@@ -24,7 +24,7 @@
 import java.nio.file.Path;
 import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.TKit;
-import jdk.jpackage.internal.ApplicationLayout;
+import jdk.incubator.jpackage.internal.ApplicationLayout;
 
 /**
  * Tests generation of app image with input folder containing empty folders.
@@ -37,7 +37,7 @@ import jdk.jpackage.internal.ApplicationLayout;
  * @library /test/lib
  * @build EmptyFolderBase
  * @build jdk.jpackage.test.*
- * @modules jdk.jpackage/jdk.jpackage.internal
+ * @modules jdk.incubator.jpackage/jdk.incubator.jpackage.internal
  * @run main/othervm -Xmx512m EmptyFolderTest
  */
 public class EmptyFolderTest {

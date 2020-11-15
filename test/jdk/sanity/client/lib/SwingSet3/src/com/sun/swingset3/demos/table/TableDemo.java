@@ -615,7 +615,6 @@ public class TableDemo extends JPanel {
                 TableDemo demo = new TableDemo();
                 frame.add(demo);
                 frame.setSize(700, 400);
-                frame.setLocationRelativeTo(null);
                 frame.setVisible(true);
                 demo.start();
             }

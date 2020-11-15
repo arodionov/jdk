@@ -33,7 +33,6 @@
 #include "jvmci/vmStructs_jvmci.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "runtime/deoptimization.hpp"
-#include "runtime/flags/jvmFlag.hpp"
 #include "runtime/sharedRuntime.hpp"
 #if INCLUDE_G1GC
 #include "gc/g1/g1CardTable.hpp"
@@ -230,7 +229,6 @@
   JVMTI_ONLY(nonstatic_field(MethodCounters,   _number_of_breakpoints,                        u2))                                   \
   nonstatic_field(MethodCounters,              _invocation_counter,                           InvocationCounter)                     \
   nonstatic_field(MethodCounters,              _backedge_counter,                             InvocationCounter)                     \
-  AOT_ONLY(nonstatic_field(MethodCounters,     _method,                                       Method*))                              \
                                                                                                                                      \
   nonstatic_field(MethodData,                  _size,                                         int)                                   \
   nonstatic_field(MethodData,                  _method,                                       Method*)                               \
@@ -307,7 +305,6 @@
   static_field(StubRoutines,                _electronicCodeBook_decryptAESCrypt,              address)                               \
   static_field(StubRoutines,                _counterMode_AESCrypt,                            address)                               \
   static_field(StubRoutines,                _base64_encodeBlock,                              address)                               \
-  static_field(StubRoutines,                _base64_decodeBlock,                              address)                               \
   static_field(StubRoutines,                _ghash_processBlocks,                             address)                               \
   static_field(StubRoutines,                _sha1_implCompress,                               address)                               \
   static_field(StubRoutines,                _sha1_implCompressMB,                             address)                               \
@@ -331,7 +328,7 @@
                                                                                                                                      \
   nonstatic_field(Thread,                   _tlab,                                            ThreadLocalAllocBuffer)                \
   nonstatic_field(Thread,                   _allocated_bytes,                                 jlong)                                 \
-  nonstatic_field(Thread,                   _poll_data,                                       SafepointMechanism::ThreadData)        \
+  nonstatic_field(Thread,                   _polling_page,                                    volatile void*)                        \
                                                                                                                                      \
   nonstatic_field(ThreadLocalAllocBuffer,   _start,                                           HeapWord*)                             \
   nonstatic_field(ThreadLocalAllocBuffer,   _top,                                             HeapWord*)                             \
@@ -343,12 +340,9 @@
   nonstatic_field(ThreadLocalAllocBuffer,   _fast_refill_waste,                               unsigned)                              \
   nonstatic_field(ThreadLocalAllocBuffer,   _slow_allocations,                                unsigned)                              \
                                                                                                                                      \
-  nonstatic_field(SafepointMechanism::ThreadData, _polling_word,                              volatile uintptr_t)                    \
-  nonstatic_field(SafepointMechanism::ThreadData, _polling_page,                              volatile uintptr_t)                    \
-                                                                                                                                     \
   nonstatic_field(ThreadShadow,             _pending_exception,                               oop)                                   \
                                                                                                                                      \
-  static_field(Symbol,                      _vm_symbols[0],                                   Symbol*)                               \
+  static_field(vmSymbols,                   _symbols[0],                                      Symbol*)                               \
                                                                                                                                      \
   nonstatic_field(vtableEntry,              _method,                                          Method*)                               \
 
@@ -393,7 +387,6 @@
   declare_constant(HeapWordSize)                                          \
   declare_constant(InvocationEntryBci)                                    \
   declare_constant(LogKlassAlignmentInBytes)                              \
-  declare_constant(JVMCINMethodData::SPECULATION_LENGTH_BITS)             \
                                                                           \
   declare_constant(JVM_ACC_WRITTEN_FLAGS)                                 \
   declare_constant(JVM_ACC_MONITOR_MATCH)                                 \
@@ -410,7 +403,6 @@
   declare_preprocessor_constant("JVM_ACC_ENUM", JVM_ACC_ENUM)             \
   declare_preprocessor_constant("JVM_ACC_SYNTHETIC", JVM_ACC_SYNTHETIC)   \
   declare_preprocessor_constant("JVM_ACC_INTERFACE", JVM_ACC_INTERFACE)   \
-  declare_preprocessor_constant("JVM_ACC_FIELD_INITIALIZED_FINAL_UPDATE", JVM_ACC_FIELD_INITIALIZED_FINAL_UPDATE) \
                                                                           \
   declare_constant(JVM_CONSTANT_Utf8)                                     \
   declare_constant(JVM_CONSTANT_Unicode)                                  \

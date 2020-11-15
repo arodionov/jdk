@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2018, 2020 SAP SE. All rights reserved.
+ * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,9 @@
  * questions.
  *
  */
-
 #include "precompiled.hpp"
+
+#include "memory/metaspace/metachunk.hpp"
 #include "memory/metaspace/metaspaceCommon.hpp"
 #include "memory/metaspace/metaspaceStatistics.hpp"
 #include "utilities/debug.hpp"
@@ -32,139 +33,168 @@
 
 namespace metaspace {
 
-// Returns total word size of all chunks in this manager.
-void ChunkManagerStats::add(const ChunkManagerStats& other) {
-  for (chunklevel_t l = chunklevel::LOWEST_CHUNK_LEVEL; l <= chunklevel::HIGHEST_CHUNK_LEVEL; l++) {
-    _num_chunks[l] += other._num_chunks[l];
-    _committed_word_size[l] += other._committed_word_size[l];
+// FreeChunksStatistics methods
+
+FreeChunksStatistics::FreeChunksStatistics()
+: _num(0), _cap(0)
+{}
+
+void FreeChunksStatistics::reset() {
+  _num = 0; _cap = 0;
+}
+
+void FreeChunksStatistics::add(uintx n, size_t s) {
+  _num += n; _cap += s;
+}
+
+void FreeChunksStatistics::add(const FreeChunksStatistics& other) {
+  _num += other._num;
+  _cap += other._cap;
+}
+
+void FreeChunksStatistics::print_on(outputStream* st, size_t scale) const {
+  st->print(UINTX_FORMAT, _num);
+  st->print(" chunks, total capacity ");
+  print_scaled_words(st, _cap, scale);
+}
+
+// ChunkManagerStatistics methods
+
+void ChunkManagerStatistics::reset() {
+  for (ChunkIndex i = ZeroIndex; i < NumberOfInUseLists; i = next_chunk_index(i)) {
+    _chunk_stats[i].reset();
   }
 }
 
-// Returns total word size of all chunks in this manager.
-size_t ChunkManagerStats::total_word_size() const {
-  size_t s = 0;
-  for (chunklevel_t l = chunklevel::LOWEST_CHUNK_LEVEL; l <= chunklevel::HIGHEST_CHUNK_LEVEL; l++) {
-    s += _num_chunks[l] * chunklevel::word_size_for_level(l);
-  }
-  return s;
+size_t ChunkManagerStatistics::total_capacity() const {
+  return _chunk_stats[SpecializedIndex].cap() +
+      _chunk_stats[SmallIndex].cap() +
+      _chunk_stats[MediumIndex].cap() +
+      _chunk_stats[HumongousIndex].cap();
 }
 
-// Returns total committed word size of all chunks in this manager.
-size_t ChunkManagerStats::total_committed_word_size() const {
-  size_t s = 0;
-  for (chunklevel_t l = chunklevel::LOWEST_CHUNK_LEVEL; l <= chunklevel::HIGHEST_CHUNK_LEVEL; l++) {
-    s += _committed_word_size[l];
-  }
-  return s;
-}
-
-void ChunkManagerStats::print_on(outputStream* st, size_t scale) const {
-  // Note: used as part of MetaspaceReport so formatting matters.
-  size_t total_size = 0;
-  size_t total_committed_size = 0;
-  for (chunklevel_t l = chunklevel::LOWEST_CHUNK_LEVEL; l <= chunklevel::HIGHEST_CHUNK_LEVEL; l++) {
+void ChunkManagerStatistics::print_on(outputStream* st, size_t scale) const {
+  FreeChunksStatistics totals;
+  for (ChunkIndex i = ZeroIndex; i < NumberOfInUseLists; i = next_chunk_index(i)) {
     st->cr();
-    chunklevel::print_chunk_size(st, l);
-    st->print(": ");
-    if (_num_chunks[l] > 0) {
-      const size_t word_size = _num_chunks[l] * chunklevel::word_size_for_level(l);
-
-      st->print("%4d, capacity=", _num_chunks[l]);
-      print_scaled_words(st, word_size, scale);
-
-      st->print(", committed=");
-      print_scaled_words_and_percentage(st, _committed_word_size[l], word_size, scale);
-
-      total_size += word_size;
-      total_committed_size += _committed_word_size[l];
+    st->print("%12s chunks: ", chunk_size_name(i));
+    if (_chunk_stats[i].num() > 0) {
+      st->print(UINTX_FORMAT_W(4) ", capacity ", _chunk_stats[i].num());
+      print_scaled_words(st, _chunk_stats[i].cap(), scale);
     } else {
       st->print("(none)");
     }
+    totals.add(_chunk_stats[i]);
   }
   st->cr();
-  st->print("Total word size: ");
-  print_scaled_words(st, total_size, scale);
-  st->print(", committed: ");
-  print_scaled_words_and_percentage(st, total_committed_size, total_size, scale);
+  st->print("%19s: " UINTX_FORMAT_W(4) ", capacity=", "Total", totals.num());
+  print_scaled_words(st, totals.cap(), scale);
   st->cr();
 }
 
-#ifdef ASSERT
-void ChunkManagerStats::verify() const {
-  assert(total_committed_word_size() <= total_word_size(),
-         "Sanity");
-}
-#endif
+// UsedChunksStatistics methods
 
-void InUseChunkStats::print_on(outputStream* st, size_t scale) const {
+UsedChunksStatistics::UsedChunksStatistics()
+: _num(0), _cap(0), _used(0), _free(0), _waste(0), _overhead(0)
+{}
+
+void UsedChunksStatistics::reset() {
+  _num = 0;
+  _cap = _overhead = _used = _free = _waste = 0;
+}
+
+void UsedChunksStatistics::add(const UsedChunksStatistics& other) {
+  _num += other._num;
+  _cap += other._cap;
+  _used += other._used;
+  _free += other._free;
+  _waste += other._waste;
+  _overhead += other._overhead;
+  DEBUG_ONLY(check_sanity());
+}
+
+void UsedChunksStatistics::print_on(outputStream* st, size_t scale) const {
   int col = st->position();
-  st->print("%4d chunk%s, ", _num, _num != 1 ? "s" : "");
+  st->print(UINTX_FORMAT_W(4) " chunk%s, ", _num, _num != 1 ? "s" : "");
   if (_num > 0) {
     col += 14; st->fill_to(col);
 
-    print_scaled_words(st, _word_size, scale, 5);
-    st->print(" capacity,");
-
-    col += 20; st->fill_to(col);
-    print_scaled_words_and_percentage(st, _committed_words, _word_size, scale, 5);
-    st->print(" committed, ");
+    print_scaled_words(st, _cap, scale, 5);
+    st->print(" capacity, ");
 
     col += 18; st->fill_to(col);
-    print_scaled_words_and_percentage(st, _used_words, _word_size, scale, 5);
+    print_scaled_words_and_percentage(st, _used, _cap, scale, 5);
     st->print(" used, ");
 
     col += 20; st->fill_to(col);
-    print_scaled_words_and_percentage(st, _free_words, _word_size, scale, 5);
+    print_scaled_words_and_percentage(st, _free, _cap, scale, 5);
     st->print(" free, ");
 
     col += 20; st->fill_to(col);
-    print_scaled_words_and_percentage(st, _waste_words, _word_size, scale, 5);
-    st->print(" waste ");
+    print_scaled_words_and_percentage(st, _waste, _cap, scale, 5);
+    st->print(" waste, ");
 
+    col += 20; st->fill_to(col);
+    print_scaled_words_and_percentage(st, _overhead, _cap, scale, 5);
+    st->print(" overhead");
   }
+  DEBUG_ONLY(check_sanity());
 }
 
 #ifdef ASSERT
-void InUseChunkStats::verify() const {
-  assert(_word_size >= _committed_words &&
-      _committed_words == _used_words + _free_words + _waste_words,
-         "Sanity: cap " SIZE_FORMAT ", committed " SIZE_FORMAT ", used " SIZE_FORMAT ", free " SIZE_FORMAT ", waste " SIZE_FORMAT ".",
-         _word_size, _committed_words, _used_words, _free_words, _waste_words);
+void UsedChunksStatistics::check_sanity() const {
+  assert(_overhead == (Metachunk::overhead() * _num), "Sanity: Overhead.");
+  assert(_cap == _used + _free + _waste + _overhead, "Sanity: Capacity.");
 }
 #endif
 
-void ArenaStats::add(const ArenaStats& other) {
-  for (chunklevel_t l = chunklevel::LOWEST_CHUNK_LEVEL; l <= chunklevel::HIGHEST_CHUNK_LEVEL; l++) {
-    _stats[l].add(other._stats[l]);
+// SpaceManagerStatistics methods
+
+SpaceManagerStatistics::SpaceManagerStatistics() { reset(); }
+
+void SpaceManagerStatistics::reset() {
+  for (int i = 0; i < NumberOfInUseLists; i ++) {
+    _chunk_stats[i].reset();
+    _free_blocks_num = 0; _free_blocks_cap_words = 0;
+  }
+}
+
+void SpaceManagerStatistics::add_free_blocks_info(uintx num, size_t cap) {
+  _free_blocks_num += num;
+  _free_blocks_cap_words += cap;
+}
+
+void SpaceManagerStatistics::add(const SpaceManagerStatistics& other) {
+  for (ChunkIndex i = ZeroIndex; i < NumberOfInUseLists; i = next_chunk_index(i)) {
+    _chunk_stats[i].add(other._chunk_stats[i]);
   }
   _free_blocks_num += other._free_blocks_num;
-  _free_blocks_word_size += other._free_blocks_word_size;
+  _free_blocks_cap_words += other._free_blocks_cap_words;
 }
 
 // Returns total chunk statistics over all chunk types.
-InUseChunkStats ArenaStats::totals() const {
-  InUseChunkStats out;
-  for (chunklevel_t l = chunklevel::LOWEST_CHUNK_LEVEL; l <= chunklevel::HIGHEST_CHUNK_LEVEL; l++) {
-    out.add(_stats[l]);
+UsedChunksStatistics SpaceManagerStatistics::totals() const {
+  UsedChunksStatistics stat;
+  for (ChunkIndex i = ZeroIndex; i < NumberOfInUseLists; i = next_chunk_index(i)) {
+    stat.add(_chunk_stats[i]);
   }
-  return out;
+  return stat;
 }
 
-void ArenaStats::print_on(outputStream* st, size_t scale,  bool detailed) const {
+void SpaceManagerStatistics::print_on(outputStream* st, size_t scale,  bool detailed) const {
   streamIndentor sti(st);
   if (detailed) {
     st->cr_indent();
-    st->print("Usage by chunk level:");
+    st->print("Usage by chunk type:");
     {
       streamIndentor sti2(st);
-      for (chunklevel_t l = chunklevel::LOWEST_CHUNK_LEVEL; l <= chunklevel::HIGHEST_CHUNK_LEVEL; l++) {
+      for (ChunkIndex i = ZeroIndex; i < NumberOfInUseLists; i = next_chunk_index(i)) {
         st->cr_indent();
-        chunklevel::print_chunk_size(st, l);
-        st->print(" chunks: ");
-        if (_stats[l]._num == 0) {
+        st->print("%15s: ", chunk_size_name(i));
+        if (_chunk_stats[i].num() == 0) {
           st->print(" (none)");
         } else {
-          _stats[l].print_on(st, scale);
+          _chunk_stats[i].print_on(st, scale);
         }
       }
 
@@ -175,52 +205,58 @@ void ArenaStats::print_on(outputStream* st, size_t scale,  bool detailed) const 
     if (_free_blocks_num > 0) {
       st->cr_indent();
       st->print("deallocated: " UINTX_FORMAT " blocks with ", _free_blocks_num);
-      print_scaled_words(st, _free_blocks_word_size, scale);
+      print_scaled_words(st, _free_blocks_cap_words, scale);
     }
   } else {
     totals().print_on(st, scale);
     st->print(", ");
     st->print("deallocated: " UINTX_FORMAT " blocks with ", _free_blocks_num);
-    print_scaled_words(st, _free_blocks_word_size, scale);
+    print_scaled_words(st, _free_blocks_cap_words, scale);
   }
 }
 
-#ifdef ASSERT
+// ClassLoaderMetaspaceStatistics methods
 
-void ArenaStats::verify() const {
-  size_t total_used = 0;
-  for (chunklevel_t l = chunklevel::LOWEST_CHUNK_LEVEL; l <= chunklevel::HIGHEST_CHUNK_LEVEL; l++) {
-    _stats[l].verify();
-    total_used += _stats[l]._used_words;
+ClassLoaderMetaspaceStatistics::ClassLoaderMetaspaceStatistics() { reset(); }
+
+void ClassLoaderMetaspaceStatistics::reset() {
+  nonclass_sm_stats().reset();
+  if (Metaspace::using_class_space()) {
+    class_sm_stats().reset();
   }
-  // Deallocated allocations still count as used
-  assert(total_used >= _free_blocks_word_size,
-         "Sanity");
-}
-#endif
-
-// Returns total arena statistics for both class and non-class metaspace
-ArenaStats ClmsStats::totals() const {
-  ArenaStats out;
-  out.add(_arena_stats_nonclass);
-  out.add(_arena_stats_class);
-  return out;
 }
 
-void ClmsStats::print_on(outputStream* st, size_t scale, bool detailed) const {
+// Returns total space manager statistics for both class and non-class metaspace
+SpaceManagerStatistics ClassLoaderMetaspaceStatistics::totals() const {
+  SpaceManagerStatistics stats;
+  stats.add(nonclass_sm_stats());
+  if (Metaspace::using_class_space()) {
+    stats.add(class_sm_stats());
+  }
+  return stats;
+}
+
+void ClassLoaderMetaspaceStatistics::add(const ClassLoaderMetaspaceStatistics& other) {
+  nonclass_sm_stats().add(other.nonclass_sm_stats());
+  if (Metaspace::using_class_space()) {
+    class_sm_stats().add(other.class_sm_stats());
+  }
+}
+
+void ClassLoaderMetaspaceStatistics::print_on(outputStream* st, size_t scale, bool detailed) const {
   streamIndentor sti(st);
   st->cr_indent();
   if (Metaspace::using_class_space()) {
     st->print("Non-Class: ");
   }
-  _arena_stats_nonclass.print_on(st, scale, detailed);
+  nonclass_sm_stats().print_on(st, scale, detailed);
   if (detailed) {
     st->cr();
   }
   if (Metaspace::using_class_space()) {
     st->cr_indent();
     st->print("    Class: ");
-    _arena_stats_class.print_on(st, scale, detailed);
+    class_sm_stats().print_on(st, scale, detailed);
     if (detailed) {
       st->cr();
     }
@@ -234,12 +270,7 @@ void ClmsStats::print_on(outputStream* st, size_t scale, bool detailed) const {
   st->cr();
 }
 
-#ifdef ASSERT
-void ClmsStats::verify() const {
-  _arena_stats_nonclass.verify();
-  _arena_stats_class.verify();
-}
-#endif
-
 } // end namespace metaspace
+
+
 

@@ -2,7 +2,6 @@
 /dist/
 /.idea/
 /.vscode/
-/nbproject/
 nbproject/private/
 /webrev
 /.src-rev
@@ -15,4 +14,3 @@ test/nashorn/lib
 NashornProfile.txt
 **/JTreport/**
 **/JTwork/**
-/src/utils/LogCompilation/target/

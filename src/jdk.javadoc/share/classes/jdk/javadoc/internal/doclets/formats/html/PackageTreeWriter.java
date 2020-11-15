@@ -25,7 +25,6 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
-import javax.lang.model.element.Element;
 import javax.lang.model.element.PackageElement;
 
 import jdk.javadoc.internal.doclets.formats.html.markup.BodyContents;
@@ -57,6 +56,8 @@ public class PackageTreeWriter extends AbstractTreeWriter {
      */
     protected PackageElement packageElement;
 
+    private final Navigation navBar;
+
     private final BodyContents bodyContents = new BodyContents();
 
     /**
@@ -69,6 +70,7 @@ public class PackageTreeWriter extends AbstractTreeWriter {
         super(configuration, path,
               new ClassTree(configuration.typeElementCatalog.allClasses(packageElement), configuration));
         this.packageElement = packageElement;
+        this.navBar = new Navigation(packageElement, configuration, PageMode.TREE, path);
     }
 
     /**
@@ -110,7 +112,11 @@ public class PackageTreeWriter extends AbstractTreeWriter {
         addTree(classtree.baseAnnotationTypes(), "doclet.Annotation_Type_Hierarchy", mainContent);
         addTree(classtree.baseEnums(), "doclet.Enum_Hierarchy", mainContent, true);
         bodyContents.addMainContent(mainContent);
-        bodyContents.setFooter(getFooter());
+        HtmlTree footer = HtmlTree.FOOTER();
+        navBar.setUserFooter(getUserHeaderFooter(false));
+        footer.add(navBar.getContent(Navigation.Position.BOTTOM));
+        addBottom(footer);
+        bodyContents.setFooter(footer);
         body.add(bodyContents);
         printHtmlDocument(null, getDescription("tree", packageElement), body);
     }
@@ -124,16 +130,15 @@ public class PackageTreeWriter extends AbstractTreeWriter {
         String packageName = packageElement.isUnnamed() ? "" : utils.getPackageName(packageElement);
         String title = packageName + " " + resources.getText("doclet.Window_Class_Hierarchy");
         HtmlTree bodyTree = getBody(getWindowTitle(title));
-        bodyContents.setHeader(getHeader(PageMode.TREE, packageElement));
-        return bodyTree;
-    }
-
-    @Override
-    protected Navigation getNavBar(PageMode pageMode, Element element) {
+        Content headerContent = new ContentBuilder();
+        addTop(headerContent);
         Content linkContent = getModuleLink(utils.elementUtils.getModuleOf(packageElement),
                 contents.moduleLabel);
-        return super.getNavBar(pageMode, element)
-                .setNavLinkModule(linkContent);
+        navBar.setNavLinkModule(linkContent);
+        navBar.setUserHeader(getUserHeaderFooter(true));
+        headerContent.add(navBar.getContent(Navigation.Position.TOP));
+        bodyContents.setHeader(headerContent);
+        return bodyTree;
     }
 
     /**

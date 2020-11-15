@@ -197,5 +197,5 @@ void ShenandoahUnload::unload() {
 
 void ShenandoahUnload::finish() {
   MetaspaceGC::compute_new_size();
-  DEBUG_ONLY(MetaspaceUtils::verify();)
+  MetaspaceUtils::verify_metrics();
 }

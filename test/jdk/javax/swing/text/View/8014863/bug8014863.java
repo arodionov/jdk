@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,7 +59,7 @@ public class bug8014863 {
 
     public static void main(String[] args) throws Exception {
         robot = new Robot();
-        robot.setAutoDelay(100);
+        robot.setAutoDelay(50);
         glyphViews = new ArrayList<GlyphView>();
 
         createAndShowGUI(text1);
@@ -152,7 +152,6 @@ public class bug8014863 {
 
                 frame.add(editorPane);
                 frame.setSize(200, 200);
-                frame.setLocationRelativeTo(null);
                 frame.setVisible(true);
             }
         });

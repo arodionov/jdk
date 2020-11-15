@@ -26,6 +26,9 @@
  * @bug 6647340
  * @summary Checks that iconified internal frame follows
  *          the main frame borders properly.
+ * @author Mikhail Lapshin
+ * @library /lib/client/
+ * @build ExtendedRobot
  * @run main bug6647340
  */
 
@@ -35,22 +38,22 @@ import java.beans.PropertyVetoException;
 
 public class bug6647340 {
     private JFrame frame;
-    private volatile Point location;
-    private volatile Point iconloc;
+    private Point location;
     private JInternalFrame jif;
-    private static Robot robot;
+    private static ExtendedRobot robot = createRobot();
 
     public static void main(String[] args) throws Exception {
-        robot = new Robot();
         final bug6647340 test = new bug6647340();
         try {
-            SwingUtilities.invokeAndWait(() -> test.setupUI());
-            robot.waitForIdle();
-            robot.delay(1000);
+            SwingUtilities.invokeAndWait(new Runnable() {
+                public void run() {
+                    test.setupUI();
+                }
+            });
             test.test();
         } finally {
             if (test.frame != null) {
-                SwingUtilities.invokeAndWait(() -> test.frame.dispose());
+                test.frame.dispose();
             }
         }
     }
@@ -74,67 +77,75 @@ public class bug6647340 {
     }
 
     private void test() throws Exception {
+        sync();
         test1();
-
-        robot.waitForIdle();
-        robot.delay(500);
+        sync();
         check1();
-        robot.waitForIdle();
-
+        sync();
         test2();
-        robot.waitForIdle();
-        robot.delay(500);
+        sync();
         check2();
     }
 
     private void test1() throws Exception {
-        SwingUtilities.invokeAndWait(() -> {
-            setIcon(true);
-            location = jif.getDesktopIcon().getLocation();
-            Dimension size = frame.getSize();
-            frame.setSize(size.width + 100, size.height + 100);
+        SwingUtilities.invokeAndWait(new Runnable() {
+            public void run() {
+                setIcon(true);
+                location = jif.getDesktopIcon().getLocation();
+                Dimension size = frame.getSize();
+                frame.setSize(size.width + 100, size.height + 100);
+            }
         });
     }
 
     private void test2() throws Exception {
-        SwingUtilities.invokeAndWait(() -> {
-            setIcon(false);
+        SwingUtilities.invokeAndWait(new Runnable() {
+            public void run() {
+                setIcon(false);
+            }
         });
-        robot.waitForIdle();
-        robot.delay(500);
-
-        SwingUtilities.invokeAndWait(() -> {
-            Dimension size = frame.getSize();
-            frame.setSize(size.width - 100, size.height - 100);
+        sync();
+        SwingUtilities.invokeAndWait(new Runnable() {
+            public void run() {
+                Dimension size = frame.getSize();
+                frame.setSize(size.width - 100, size.height - 100);
+            }
         });
-        robot.waitForIdle();
-        robot.delay(500);
-
-        SwingUtilities.invokeAndWait(() -> {
-            setIcon(true);
+        sync();
+        SwingUtilities.invokeAndWait(new Runnable() {
+            public void run() {
+                setIcon(true);
+            }
         });
     }
 
-    private void check1() throws Exception {
-        SwingUtilities.invokeAndWait(() -> {
-            iconloc = jif.getDesktopIcon().getLocation();
-        });
-        if (!iconloc.equals(location)) {
+    private void check1() {
+        if (!jif.getDesktopIcon().getLocation().equals(location)) {
             System.out.println("First test passed");
         } else {
             throw new RuntimeException("Icon isn't shifted with the frame bounds");
         }
     }
 
-    private void check2() throws Exception {
-        SwingUtilities.invokeAndWait(() -> {
-            iconloc = jif.getDesktopIcon().getLocation();
-        });
-        if (iconloc.equals(location)) {
+    private void check2() {
+        if (jif.getDesktopIcon().getLocation().equals(location)) {
             System.out.println("Second test passed");
         } else {
             throw new RuntimeException("Icon isn't located near the frame bottom");
         }
+    }
+
+    private static void sync() {
+        robot.waitForIdle();
+    }
+    private static ExtendedRobot createRobot() {
+        try {
+             ExtendedRobot robot = new ExtendedRobot();
+             return robot;
+         }catch(Exception ex) {
+             ex.printStackTrace();
+             throw new Error("Unexpected Failure");
+         }
     }
 
     private void setIcon(boolean b) {

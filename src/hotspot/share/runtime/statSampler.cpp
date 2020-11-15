@@ -173,15 +173,15 @@ void StatSampler::collect_sample() {
 }
 
 /*
- * Call into java.lang.System.getProperty to check that the value of the
- * specified property matches
+ * method to upcall into Java to return the value of the specified
+ * property as a utf8 string, or NULL if does not exist. The caller
+ * is responsible for setting a ResourceMark for proper cleanup of
+ * the utf8 strings.
  */
-void StatSampler::assert_system_property(const char* name, const char* value, TRAPS) {
-#ifdef ASSERT
-  ResourceMark rm(THREAD);
+const char* StatSampler::get_system_property(const char* name, TRAPS) {
 
   // setup the arguments to getProperty
-  Handle key_str   = java_lang_String::create_from_str(name, CHECK);
+  Handle key_str   = java_lang_String::create_from_str(name, CHECK_NULL);
 
   // return value
   JavaValue result(T_OBJECT);
@@ -192,73 +192,100 @@ void StatSampler::assert_system_property(const char* name, const char* value, TR
                          vmSymbols::getProperty_name(),
                          vmSymbols::string_string_signature(),
                          key_str,
-                         CHECK);
+                         CHECK_NULL);
 
   oop value_oop = (oop)result.get_jobject();
-  assert(value_oop != NULL, "property must have a value");
+  if (value_oop == NULL) {
+    return NULL;
+  }
 
   // convert Java String to utf8 string
-  char* system_value = java_lang_String::as_utf8_string(value_oop);
+  char* value = java_lang_String::as_utf8_string(value_oop);
 
-  assert(strcmp(value, system_value) == 0, "property value mustn't differ from System.getProperty");
-#endif // ASSERT
+  return value;
 }
 
 /*
- * Adds a constant counter of the given property. Asserts the value does not
- * differ from the value retrievable from System.getProperty(name)
+ * The list of System Properties that have corresponding PerfData
+ * string instrumentation created by retrieving the named property's
+ * value from System.getProperty() and unconditionally creating a
+ * PerfStringConstant object initialized to the retrieved value. This
+ * is not an exhaustive list of Java properties with corresponding string
+ * instrumentation as the create_system_property_instrumentation() method
+ * creates other property based instrumentation conditionally.
  */
-void StatSampler::add_property_constant(CounterNS name_space, const char* name, const char* value, TRAPS) {
-  // the property must exist
-  assert(value != NULL, "property name should be have a value: %s", name);
-  assert_system_property(name, value, CHECK);
-  if (value != NULL) {
-    // create the property counter
-    PerfDataManager::create_string_constant(name_space, name, value, CHECK);
-  }
-}
+
+// stable interface, supported counters
+static const char* property_counters_ss[] = {
+  "java.vm.specification.version",
+  "java.vm.specification.name",
+  "java.vm.specification.vendor",
+  "java.vm.version",
+  "java.vm.name",
+  "java.vm.vendor",
+  "java.vm.info",
+  "jdk.debug",
+  "java.library.path",
+  "java.class.path",
+  "java.version",
+  "java.home",
+  NULL
+};
+
+// unstable interface, supported counters
+static const char* property_counters_us[] = {
+  NULL
+};
+
+// unstable interface, unsupported counters
+static const char* property_counters_uu[] = {
+  "sun.boot.library.path",
+  NULL
+};
+
+typedef struct {
+  const char** property_list;
+  CounterNS name_space;
+} PropertyCounters;
+
+static PropertyCounters property_counters[] = {
+  { property_counters_ss, JAVA_PROPERTY },
+  { property_counters_us, COM_PROPERTY },
+  { property_counters_uu, SUN_PROPERTY },
+  { NULL, SUN_PROPERTY }
+};
+
 
 /*
- * Adds a string constant of the given property. Retrieves the value via
- * Arguments::get_property() and asserts the value for the does not differ from
- * the value retrievable from System.getProperty()
- */
-void StatSampler::add_property_constant(CounterNS name_space, const char* name, TRAPS) {
-  add_property_constant(name_space, name, Arguments::get_property(name), CHECK);
-}
-
-/*
- * Method to create PerfStringConstants containing the values of various
- * system properties. Constants are created from information known to HotSpot,
- * but are initialized as-if getting the values from System.getProperty()
- * during bootstrap.
- *
+ * Method to create PerfData string instruments that contain the values
+ * of various system properties. String instruments are created for each
+ * property specified in the property lists provided in property_counters[].
  * Property counters have a counter name space prefix prepended to the
- * property name.
+ * property name as indicated in property_counters[].
  */
 void StatSampler::create_system_property_instrumentation(TRAPS) {
 
-  // Non-writeable, constant properties
-  add_property_constant(JAVA_PROPERTY, "java.vm.specification.name", "Java Virtual Machine Specification", CHECK);
-  add_property_constant(JAVA_PROPERTY, "java.version", JDK_Version::java_version(), CHECK);
-  add_property_constant(JAVA_PROPERTY, "java.vm.version", VM_Version::vm_release(), CHECK);
-  add_property_constant(JAVA_PROPERTY, "java.vm.name", VM_Version::vm_name(), CHECK);
-  add_property_constant(JAVA_PROPERTY, "java.vm.vendor", VM_Version::vm_vendor(), CHECK);
-  add_property_constant(JAVA_PROPERTY, "jdk.debug", VM_Version::jdk_debug_level(), CHECK);
+  ResourceMark rm;
 
-  // Get remaining property constants via Arguments::get_property,
-  // which does a linear search over the internal system properties list.
+  for (int i = 0; property_counters[i].property_list != NULL; i++) {
 
-  // SUN_PROPERTY properties
-  add_property_constant(SUN_PROPERTY, "sun.boot.library.path", CHECK);
+    for (int j = 0; property_counters[i].property_list[j] != NULL; j++) {
 
-  // JAVA_PROPERTY properties
-  add_property_constant(JAVA_PROPERTY, "java.vm.specification.version", CHECK);
-  add_property_constant(JAVA_PROPERTY, "java.vm.specification.vendor", CHECK);
-  add_property_constant(JAVA_PROPERTY, "java.vm.info", CHECK);
-  add_property_constant(JAVA_PROPERTY, "java.library.path", CHECK);
-  add_property_constant(JAVA_PROPERTY, "java.class.path", CHECK);
-  add_property_constant(JAVA_PROPERTY, "java.home", CHECK);
+      const char* property_name = property_counters[i].property_list[j];
+      assert(property_name != NULL, "property name should not be NULL");
+
+      const char* value = get_system_property(property_name, CHECK);
+
+      // the property must exist
+      assert(value != NULL, "property name should be valid");
+
+      if (value != NULL) {
+        // create the property counter
+        PerfDataManager::create_string_constant(property_counters[i].name_space,
+                                                property_name, value, CHECK);
+      }
+    }
+  }
 }
 
 /*

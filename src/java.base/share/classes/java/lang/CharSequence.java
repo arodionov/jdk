@@ -54,6 +54,7 @@ import java.util.stream.StreamSupport;
  *
  * @author Mike McCloskey
  * @since 1.4
+ * @spec JSR-51
  */
 
 public interface CharSequence {

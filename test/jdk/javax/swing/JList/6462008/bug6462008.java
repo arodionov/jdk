@@ -61,7 +61,6 @@ public class bug6462008 {
             });
 
             robot.waitForIdle();
-            robot.delay(1000);
 
             setAnchorLead(-1);
             robot.waitForIdle();
@@ -367,7 +366,6 @@ public class bug6462008 {
         frame.getContentPane().add(panel);
 
         frame.setVisible(true);
-        frame.setLocationRelativeTo(null);
     }
 
     private static void checkSelection(int... sels) throws Exception {

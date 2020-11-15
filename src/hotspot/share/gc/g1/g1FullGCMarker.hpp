@@ -43,11 +43,8 @@ typedef GenericTaskQueueSet<OopQueue, mtGC>          OopQueueSet;
 typedef GenericTaskQueueSet<ObjArrayTaskQueue, mtGC> ObjArrayTaskQueueSet;
 
 class G1CMBitMap;
-class G1FullCollector;
 
 class G1FullGCMarker : public CHeapObj<mtGC> {
-  G1FullCollector*   _collector;
-
   uint               _worker_id;
   // Backing mark bitmap
   G1CMBitMap*        _bitmap;
@@ -74,7 +71,7 @@ class G1FullGCMarker : public CHeapObj<mtGC> {
   inline void follow_array(objArrayOop array);
   inline void follow_array_chunk(objArrayOop array, int index);
 public:
-  G1FullGCMarker(G1FullCollector* collector, uint worker_id, PreservedMarks* preserved_stack);
+  G1FullGCMarker(uint worker_id, PreservedMarks* preserved_stack, G1CMBitMap* bitmap);
   ~G1FullGCMarker();
 
   // Stack getters

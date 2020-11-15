@@ -293,10 +293,9 @@
   product(bool, ExecutingUnitTests, false,                                  \
           "Whether the JVM is running unit tests or not")                   \
                                                                             \
-  product(bool, UseTLAB, true,                                              \
-          "Use thread-local object allocation")                             \
+  product_pd(bool, UseTLAB, "Use thread-local object allocation")           \
                                                                             \
-  product(bool, ResizeTLAB, true,                                           \
+  product_pd(bool, ResizeTLAB,                                              \
           "Dynamically resize TLAB size for threads")                       \
                                                                             \
   product(bool, ZeroTLAB, false,                                            \

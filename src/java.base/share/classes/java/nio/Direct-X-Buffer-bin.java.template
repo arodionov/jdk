@@ -33,7 +33,8 @@ class XXX {
 
     private $type$ get$Type$(long a) {
         try {
-            $memtype$ x = SCOPED_MEMORY_ACCESS.get$Memtype$Unaligned(scope(), null, a, bigEndian);
+            checkSegment();
+            $memtype$ x = UNSAFE.get$Memtype$Unaligned(null, a, bigEndian);
             return $fromBits$(x);
         } finally {
             Reference.reachabilityFence(this);
@@ -61,8 +62,9 @@ class XXX {
     private ByteBuffer put$Type$(long a, $type$ x) {
 #if[rw]
         try {
+            checkSegment();
             $memtype$ y = $toBits$(x);
-            SCOPED_MEMORY_ACCESS.put$Memtype$Unaligned(scope(), null, a, y, bigEndian);
+            UNSAFE.put$Memtype$Unaligned(null, a, y, bigEndian);
         } finally {
             Reference.reachabilityFence(this);
         }

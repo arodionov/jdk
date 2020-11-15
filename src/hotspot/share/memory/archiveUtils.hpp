@@ -30,7 +30,6 @@
 #include "runtime/arguments.hpp"
 #include "utilities/bitMap.hpp"
 
-class BootstrapInfo;
 class ReservedSpace;
 class VirtualSpace;
 
@@ -238,12 +237,6 @@ public:
   void do_oop(oop *p);
   void do_region(u_char* start, size_t size);
   bool reading() const { return true; }
-};
-
-class ArchiveUtils {
-public:
-  static void log_to_classlist(BootstrapInfo* bootstrap_specifier, TRAPS) NOT_CDS_RETURN;
-  static void check_for_oom(oop exception) NOT_CDS_RETURN;
 };
 
 #endif // SHARE_MEMORY_ARCHIVEUTILS_HPP

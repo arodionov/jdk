@@ -467,7 +467,7 @@ public class Win32GraphicsDevice extends GraphicsDevice implements
             // display mode
             Rectangle screenBounds = getDefaultConfiguration().getBounds();
             w.setBounds(screenBounds.x, screenBounds.y,
-                        screenBounds.width, screenBounds.height);
+                        dm.getWidth(), dm.getHeight());
             // Note: no call to replaceSurfaceData is required here since
             // replacement will be caused by an upcoming display change event
         } else {

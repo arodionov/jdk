@@ -44,7 +44,6 @@ import java.util.Set;
 import java.util.jar.JarFile;
 
 import jdk.internal.module.Modules;
-import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 /*
  * Copyright 2003 Wily Technology, Inc.
@@ -393,7 +392,6 @@ public class InstrumentationImpl implements Instrumentation {
     private native Class[]
     getInitiatedClasses0(long nativeAgent, ClassLoader loader);
 
-    @IntrinsicCandidate
     private native long
     getObjectSize0(long nativeAgent, Object objectToSize);
 

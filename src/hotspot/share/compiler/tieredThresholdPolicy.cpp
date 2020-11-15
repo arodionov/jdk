@@ -27,7 +27,6 @@
 #include "compiler/compilerOracle.hpp"
 #include "compiler/tieredThresholdPolicy.hpp"
 #include "memory/resourceArea.hpp"
-#include "prims/jvmtiExport.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/globals_extension.hpp"
@@ -295,7 +294,7 @@ void TieredThresholdPolicy::initialize() {
   // Some inlining tuning
 #ifdef X86
   if (FLAG_IS_DEFAULT(InlineSmallCode)) {
-    FLAG_SET_DEFAULT(InlineSmallCode, 2500);
+    FLAG_SET_DEFAULT(InlineSmallCode, 2000);
   }
 #endif
 

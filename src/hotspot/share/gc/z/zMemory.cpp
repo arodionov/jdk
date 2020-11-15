@@ -25,6 +25,7 @@
 #include "gc/z/zList.inline.hpp"
 #include "gc/z/zLock.inline.hpp"
 #include "gc/z/zMemory.inline.hpp"
+#include "memory/allocation.inline.hpp"
 
 ZMemory* ZMemoryManager::create(uintptr_t start, size_t size) {
   ZMemory* const area = new ZMemory(start, size);

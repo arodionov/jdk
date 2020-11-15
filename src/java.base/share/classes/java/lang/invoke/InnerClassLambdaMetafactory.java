@@ -25,10 +25,8 @@
 
 package java.lang.invoke;
 
-import jdk.internal.misc.CDS;
 import jdk.internal.org.objectweb.asm.*;
 import sun.invoke.util.BytecodeDescriptor;
-import sun.invoke.util.VerifyAccess;
 import sun.security.action.GetPropertyAction;
 import sun.security.action.GetBooleanAction;
 
@@ -67,6 +65,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
     private static final String DESCR_METHOD_WRITE_REPLACE = "()Ljava/lang/Object;";
     private static final String DESCR_METHOD_WRITE_OBJECT = "(Ljava/io/ObjectOutputStream;)V";
     private static final String DESCR_METHOD_READ_OBJECT = "(Ljava/io/ObjectInputStream;)V";
+    private static final String DESCR_SET_IMPL_METHOD = "(Ljava/lang/invoke/MethodHandle;)V";
 
     private static final String NAME_METHOD_WRITE_REPLACE = "writeReplace";
     private static final String NAME_METHOD_READ_OBJECT = "readObject";
@@ -87,7 +86,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
     private static final String[] EMPTY_STRING_ARRAY = new String[0];
 
     // Used to ensure that each spun class name is unique
-    private static final AtomicInteger counter = new AtomicInteger();
+    private static final AtomicInteger counter = new AtomicInteger(0);
 
     // For dumping generated classes to disk, for debugging purposes
     private static final ProxyClassesDumper dumper;
@@ -169,8 +168,8 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
         implMethodDesc = implInfo.getMethodType().toMethodDescriptorString();
         constructorType = invokedType.changeReturnType(Void.TYPE);
         lambdaClassName = lambdaClassName(targetClass);
-        useImplMethodHandle = !Modifier.isPublic(implInfo.getModifiers()) &&
-                              !VerifyAccess.isSamePackage(implClass, implInfo.getDeclaringClass());
+        useImplMethodHandle = !implClass.getPackageName().equals(implInfo.getDeclaringClass().getPackageName())
+                                && !Modifier.isPublic(implInfo.getModifiers());
         cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
         int parameterCount = invokedType.parameterCount();
         if (parameterCount > 0) {
@@ -264,7 +263,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
      */
     private Class<?> spinInnerClass() throws LambdaConversionException {
         // include lambda proxy class in CDS archive at dump time
-        if (CDS.isDumpingArchive()) {
+        if (LambdaProxyClassArchive.isDumpArchive()) {
             Class<?> innerClass = generateInnerClass();
             LambdaProxyClassArchive.register(targetClass,
                                              samMethodName,

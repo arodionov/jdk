@@ -163,13 +163,9 @@ public class IndexBuilder {
     public void add(IndexItem item) {
         Objects.requireNonNull(item);
 
-        if (item.isElementItem() || item.isTagItem()) {
-            // don't put summary-page items in the A-Z index:
-            // they are listed separately, at the top of the index page
-            itemsByFirstChar.computeIfAbsent(keyCharacter(item.getLabel()),
+        itemsByFirstChar.computeIfAbsent(keyCharacter(item.getLabel()),
                     c -> new TreeSet<>(mainComparator))
-                    .add(item);
-        }
+                .add(item);
 
         itemsByCategory.computeIfAbsent(item.getCategory(),
                     c -> new TreeSet<>(mainComparator))
@@ -188,7 +184,7 @@ public class IndexBuilder {
     }
 
     /**
-     * Returns a sorted list of the first characters of the labels of index items.
+     * Returns a list of index keys.
      */
     public List<Character> getFirstCharacters() {
         return new ArrayList<>(itemsByFirstChar.keySet());
@@ -214,7 +210,7 @@ public class IndexBuilder {
     public SortedSet<IndexItem> getItems(DocTree.Kind kind) {
         Objects.requireNonNull(kind);
         return itemsByCategory.getOrDefault(IndexItem.Category.TAGS, Collections.emptySortedSet()).stream()
-                .filter(i -> i.isKind(kind))
+                .filter(i -> i.getDocTree().getKind() == kind)
                 .collect(Collectors.toCollection(() -> new TreeSet<>(mainComparator)));
     }
 

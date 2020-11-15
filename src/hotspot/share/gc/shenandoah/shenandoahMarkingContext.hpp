@@ -25,8 +25,7 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHMARKINGCONTEXT_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHMARKINGCONTEXT_HPP
 
-#include "gc/shenandoah/shenandoahMarkBitMap.hpp"
-#include "gc/shenandoah/shenandoahSharedVariables.hpp"
+#include "gc/shared/markBitMap.hpp"
 #include "memory/allocation.hpp"
 #include "memory/memRegion.hpp"
 #include "oops/oopsHierarchy.hpp"
@@ -36,7 +35,7 @@
  */
 class ShenandoahMarkingContext : public CHeapObj<mtGC> {
 private:
-  ShenandoahMarkBitMap _mark_bit_map;
+  MarkBitMap _mark_bit_map;
 
   HeapWord** const _top_bitmaps;
   HeapWord** const _top_at_mark_starts_base;
@@ -52,18 +51,14 @@ public:
    * been marked by this thread. Returns false if the object has already been marked,
    * or if a competing thread succeeded in marking this object.
    */
-  inline bool mark_strong(oop obj, bool& was_upgraded);
-  inline bool mark_weak(oop obj);
+  inline bool mark(oop obj);
 
-  // Simple versions of marking accessors, to be used outside of marking (e.g. no possible concurrent updates)
-  inline bool is_marked(oop) const;
-  inline bool is_marked_strong(oop obj) const;
-  inline bool is_marked_weak(oop obj) const;
-
-  inline HeapWord* get_next_marked_addr(HeapWord* addr, HeapWord* limit) const;
+  inline bool is_marked(oop obj) const;
 
   inline bool allocated_after_mark_start(oop obj) const;
   inline bool allocated_after_mark_start(HeapWord* addr) const;
+
+  inline MarkBitMap* mark_bit_map();
 
   inline HeapWord* top_at_mark_start(ShenandoahHeapRegion* r) const;
   inline void capture_top_at_mark_start(ShenandoahHeapRegion* r);

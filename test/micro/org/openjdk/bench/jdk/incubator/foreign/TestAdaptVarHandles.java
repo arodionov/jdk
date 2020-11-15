@@ -144,8 +144,9 @@ public class TestAdaptVarHandles {
     @Benchmark
     public int segment_loop() throws Throwable {
         int sum = 0;
+        MemoryAddress baseAddress = segment.baseAddress();
         for (int i = 0; i < ELEM_SIZE; i++) {
-            sum += (int)VH_addr_int.get(segment, (long)i);
+            sum += (int)VH_addr_int.get(baseAddress, (long)i);
         }
         return sum;
     }
@@ -153,8 +154,9 @@ public class TestAdaptVarHandles {
     @Benchmark
     public int segment_box_loop() throws Throwable {
         int sum = 0;
+        MemoryAddress baseAddress = segment.baseAddress();
         for (int i = 0; i < ELEM_SIZE; i++) {
-            sum += ((IntBox)VH_addr_box_int.get(segment, (long)i)).intValue();
+            sum += ((IntBox)VH_addr_box_int.get(baseAddress, (long)i)).intValue();
         }
         return sum;
     }

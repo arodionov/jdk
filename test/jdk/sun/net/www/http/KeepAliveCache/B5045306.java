@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 5045306 6356004 6993490 8255124
+ * @bug 5045306 6356004 6993490
  * @modules java.base/sun.net.www
  *          java.management
  * @library ../../httptest/
@@ -35,8 +35,6 @@
 import java.net.*;
 import java.io.*;
 import java.lang.management.*;
-import java.util.ArrayList;
-import java.util.List;
 
 /* Part 1:
  * The http client makes a connection to a URL whos content contains a lot of
@@ -71,10 +69,6 @@ public class B5045306
     }
 
     public static void clientHttpCalls() {
-        List<Throwable> uncaught = new ArrayList<>();
-        Thread.setDefaultUncaughtExceptionHandler((t, ex) -> {
-            uncaught.add(ex);
-        });
         try {
             System.out.println("http server listen on: " + server.getLocalPort());
             String hostAddr =  InetAddress.getLocalHost().getHostAddress();
@@ -138,9 +132,6 @@ public class B5045306
             e.printStackTrace();
         } finally {
             server.terminate();
-        }
-        if (!uncaught.isEmpty()) {
-            throw new RuntimeException("Unhandled exception:", uncaught.get(0));
         }
     }
 }

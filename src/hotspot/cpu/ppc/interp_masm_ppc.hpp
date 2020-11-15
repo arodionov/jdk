@@ -211,7 +211,7 @@ class InterpreterMacroAssembler: public MacroAssembler {
 
   // Object locking
   void lock_object  (Register lock_reg, Register obj_reg);
-  void unlock_object(Register lock_reg);
+  void unlock_object(Register lock_reg, bool check_for_exceptions = true);
 
   // Interpreter profiling operations
   void set_method_data_pointer_for_bcp();

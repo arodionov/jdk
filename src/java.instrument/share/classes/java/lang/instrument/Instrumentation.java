@@ -729,6 +729,7 @@ public interface Instrumentation {
      *
      * @see #isModifiableModule(Module)
      * @since 9
+     * @spec JPMS
      */
     void redefineModule(Module module,
                         Set<Module> extraReads,
@@ -749,6 +750,7 @@ public interface Instrumentation {
      * @throws NullPointerException if the module is {@code null}
      *
      * @since 9
+     * @spec JPMS
      */
     boolean isModifiableModule(Module module);
 }

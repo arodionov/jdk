@@ -98,10 +98,6 @@ class LogTagSet {
     return _output_list.level_for(output);
   }
 
-  void disable_outputs() {
-    _output_list.clear();
-  }
-
   void set_output_level(LogOutput* output, LogLevelType level) {
     _output_list.set_output_level(output, level);
   }

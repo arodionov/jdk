@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,23 +28,12 @@
  * @summary Html content in JEditorPane is overlapping on swing components while resizing the application.
  * @library ../../../regtesthelpers
  * @build Util
- * @run main/othervm -Dsun.java2d.uiScale=1 bug6796710
+   @run main bug6796710
  */
 
-import java.awt.BorderLayout;
-import java.awt.Rectangle;
-import java.awt.Robot;
+import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.io.File;
-
-import javax.imageio.ImageIO;
-import javax.swing.JButton;
-import javax.swing.JEditorPane;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import javax.swing.SwingUtilities;
+import javax.swing.*;
 
 public class bug6796710 {
     // The page is inlined because we want to be sure that the JEditorPane filled synchronously
@@ -100,7 +89,6 @@ public class bug6796710 {
 
                 frame.setContentPane(pnContent);
                 frame.setSize(400, 600);
-                frame.setLocationRelativeTo(null);
                 frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
                 frame.setVisible(true);
             }
@@ -125,10 +113,7 @@ public class bug6796710 {
         // On Linux platforms realSync doesn't guaranties setSize completion
         Thread.sleep(1000);
 
-        BufferedImage pnBottomImage = getPnBottomImage();
-        if (!Util.compareBufferedImages(bufferedImage, pnBottomImage)) {
-            ImageIO.write(bufferedImage, "png", new File("bufferedImage.png"));
-            ImageIO.write(pnBottomImage, "png", new File("pnBottomImage.png"));
+        if (!Util.compareBufferedImages(bufferedImage, getPnBottomImage())) {
             throw new RuntimeException("The test failed");
         }
 

@@ -32,7 +32,6 @@
 #include "gc/shenandoah/shenandoahTaskqueue.hpp"
 
 class ShenandoahStrDedupQueue;
-class ShenandoahReferenceProcessor;
 
 class ShenandoahConcurrentMark: public CHeapObj<mtGC> {
 private:
@@ -50,10 +49,10 @@ private:
   inline void do_task(ShenandoahObjToScanQueue* q, T* cl, ShenandoahLiveData* live_data, ShenandoahMarkTask* task);
 
   template <class T>
-  inline void do_chunked_array_start(ShenandoahObjToScanQueue* q, T* cl, oop array, bool weak);
+  inline void do_chunked_array_start(ShenandoahObjToScanQueue* q, T* cl, oop array);
 
   template <class T>
-  inline void do_chunked_array(ShenandoahObjToScanQueue* q, T* cl, oop array, int chunk, int pow, bool weak);
+  inline void do_chunked_array(ShenandoahObjToScanQueue* q, T* cl, oop array, int chunk, int pow);
 
   inline void count_liveness(ShenandoahLiveData* live_data, oop obj);
 
@@ -61,10 +60,10 @@ private:
   void mark_loop_work(T* cl, ShenandoahLiveData* live_data, uint worker_id, TaskTerminator *t);
 
   template <bool CANCELLABLE>
-  void mark_loop_prework(uint worker_id, TaskTerminator *terminator, ShenandoahReferenceProcessor* rp, bool strdedup);
+  void mark_loop_prework(uint worker_id, TaskTerminator *terminator, ReferenceProcessor *rp, bool strdedup);
 
 public:
-  void mark_loop(uint worker_id, TaskTerminator* terminator, ShenandoahReferenceProcessor* rp,
+  void mark_loop(uint worker_id, TaskTerminator* terminator, ReferenceProcessor *rp,
                  bool cancellable, bool strdedup) {
     if (cancellable) {
       mark_loop_prework<true>(worker_id, terminator, rp, strdedup);
@@ -74,7 +73,7 @@ public:
   }
 
   template<class T, UpdateRefsMode UPDATE_REFS, StringDedupMode STRING_DEDUP>
-  static inline void mark_through_ref(T* p, ShenandoahHeap* heap, ShenandoahObjToScanQueue* q, ShenandoahMarkingContext* const mark_context, bool weak);
+  static inline void mark_through_ref(T* p, ShenandoahHeap* heap, ShenandoahObjToScanQueue* q, ShenandoahMarkingContext* const mark_context);
 
   void mark_from_roots();
   void finish_mark_from_roots(bool full_gc);
@@ -82,6 +81,15 @@ public:
   void mark_roots(ShenandoahPhaseTimings::Phase root_phase);
   void update_roots(ShenandoahPhaseTimings::Phase root_phase);
   void update_thread_roots(ShenandoahPhaseTimings::Phase root_phase);
+
+// ---------- Weak references
+//
+private:
+  void weak_refs_work(bool full_gc);
+  void weak_refs_work_doit(bool full_gc);
+
+public:
+  void preclean_weak_refs();
 
 // ---------- Helpers
 // Used from closures, need to be public

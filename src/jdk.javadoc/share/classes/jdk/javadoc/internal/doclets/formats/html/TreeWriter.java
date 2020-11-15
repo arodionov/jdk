@@ -66,6 +66,8 @@ public class TreeWriter extends AbstractTreeWriter {
      */
     private final boolean classesOnly;
 
+    private final Navigation navBar;
+
     protected BodyContents bodyContents;
 
     /**
@@ -79,6 +81,7 @@ public class TreeWriter extends AbstractTreeWriter {
         super(configuration, filename, classtree);
         packages = configuration.packages;
         classesOnly = packages.isEmpty();
+        this.navBar = new Navigation(null, configuration, PageMode.TREE, path);
         this.bodyContents = new BodyContents();
     }
 
@@ -115,9 +118,13 @@ public class TreeWriter extends AbstractTreeWriter {
         addTree(classtree.baseInterfaces(), "doclet.Interface_Hierarchy", mainContent);
         addTree(classtree.baseAnnotationTypes(), "doclet.Annotation_Type_Hierarchy", mainContent);
         addTree(classtree.baseEnums(), "doclet.Enum_Hierarchy", mainContent, true);
+        HtmlTree footerTree = HtmlTree.FOOTER();
+        navBar.setUserFooter(getUserHeaderFooter(false));
+        footerTree.add(navBar.getContent(Navigation.Position.BOTTOM));
+        addBottom(footerTree);
         body.add(bodyContents
                 .addMainContent(mainContent)
-                .setFooter(getFooter()));
+                .setFooter(footerTree));
         printHtmlDocument(null, "class tree", body);
     }
 
@@ -168,7 +175,11 @@ public class TreeWriter extends AbstractTreeWriter {
     protected HtmlTree getTreeHeader() {
         String title = resources.getText("doclet.Window_Class_Hierarchy");
         HtmlTree bodyTree = getBody(getWindowTitle(title));
-        bodyContents.setHeader(getHeader(PageMode.TREE));
+        Content headerContent = new ContentBuilder();
+        addTop(headerContent);
+        navBar.setUserHeader(getUserHeaderFooter(true));
+        headerContent.add(navBar.getContent(Navigation.Position.TOP));
+        bodyContents.setHeader(headerContent);
         return bodyTree;
     }
 

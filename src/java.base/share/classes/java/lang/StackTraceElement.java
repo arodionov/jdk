@@ -115,6 +115,7 @@ public final class StackTraceElement implements java.io.Serializable {
      *         {@code methodName} is null
      * @since 1.5
      * @revised 9
+     * @spec JPMS
      */
     public StackTraceElement(String declaringClass, String methodName,
                              String fileName, int lineNumber) {
@@ -151,6 +152,7 @@ public final class StackTraceElement implements java.io.Serializable {
      *         or {@code methodName} is {@code null}
      *
      * @since 9
+     * @spec JPMS
      */
     public StackTraceElement(String classLoaderName,
                              String moduleName, String moduleVersion,
@@ -210,6 +212,7 @@ public final class StackTraceElement implements java.io.Serializable {
      *         point represented by this stack trace element; {@code null}
      *         if the module name is not available.
      * @since 9
+     * @spec JPMS
      * @see Module#getName()
      */
     public String getModuleName() {
@@ -224,6 +227,7 @@ public final class StackTraceElement implements java.io.Serializable {
      *         point represented by this stack trace element; {@code null}
      *         if the module version is not available.
      * @since 9
+     * @spec JPMS
      * @see java.lang.module.ModuleDescriptor.Version
      */
     public String getModuleVersion() {
@@ -239,6 +243,7 @@ public final class StackTraceElement implements java.io.Serializable {
      *         if the class loader is not named.
      *
      * @since 9
+     * @spec JPMS
      * @see java.lang.ClassLoader#getName()
      */
     public String getClassLoaderName() {
@@ -353,6 +358,7 @@ public final class StackTraceElement implements java.io.Serializable {
      * choose to omit some element in the returned string.
      *
      * @revised 9
+     * @spec JPMS
      * @see    Throwable#printStackTrace()
      */
     public String toString() {
@@ -402,6 +408,7 @@ public final class StackTraceElement implements java.io.Serializable {
      *         execution point as this instance.
      *
      * @revised 9
+     * @spec JPMS
      */
     public boolean equals(Object obj) {
         if (obj==this)

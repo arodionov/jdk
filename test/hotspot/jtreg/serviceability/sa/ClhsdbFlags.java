@@ -65,6 +65,7 @@ public class ClhsdbFlags {
                     "UnlockDiagnosticVMOptions = true",
                     "MaxFDLimit = false",
                     "MaxJavaStackTraceDepth = 1024",
+                    "VerifyMergedCPBytecodes",
                     "ConcGCThreads", "UseThreadPriorities",
                     "ShowHiddenFrames"));
             expStrMap.put("flags -nd", List.of(

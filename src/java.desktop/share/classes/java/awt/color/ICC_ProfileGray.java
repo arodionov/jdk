@@ -115,7 +115,10 @@ public class ICC_ProfileGray extends ICC_Profile {
      *         single gamma value
      */
     public float getGamma() {
-        return getGamma(ICC_Profile.icSigGrayTRCTag);
+    float theGamma;
+
+        theGamma = super.getGamma(ICC_Profile.icSigGrayTRCTag);
+        return theGamma;
     }
 
     /**
@@ -137,6 +140,10 @@ public class ICC_ProfileGray extends ICC_Profile {
      *         table
      */
     public short[] getTRC() {
-        return getTRC(ICC_Profile.icSigGrayTRCTag);
+    short[]    theTRC;
+
+        theTRC = super.getTRC(ICC_Profile.icSigGrayTRCTag);
+        return theTRC;
     }
+
 }

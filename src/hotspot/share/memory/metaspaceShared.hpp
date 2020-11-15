@@ -35,10 +35,6 @@
 
 #define MAX_SHARED_DELTA                (0x7FFFFFFF)
 
-// Metaspace::allocate() requires that all blocks must be aligned with KlassAlignmentInBytes.
-// We enforce the same alignment rule in blocks allocated from the shared space.
-const int SharedSpaceObjectAlignment = KlassAlignmentInBytes;
-
 class outputStream;
 class CHeapBitMap;
 class FileMapInfo;
@@ -234,7 +230,7 @@ class MetaspaceShared : AllStatic {
   template <typename T>
   static size_t ro_array_bytesize(int length) {
     size_t byte_size = Array<T>::byte_sizeof(length, sizeof(T));
-    return align_up(byte_size, SharedSpaceObjectAlignment);
+    return align_up(byte_size, BytesPerWord);
   }
 
   static address i2i_entry_code_buffers(size_t total_size);

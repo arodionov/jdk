@@ -25,7 +25,6 @@
 #ifndef SHARE_GC_SHENANDOAH_C2_SHENANDOAHSUPPORT_HPP
 #define SHARE_GC_SHENANDOAH_C2_SHENANDOAHSUPPORT_HPP
 
-#include "gc/shenandoah/shenandoahBarrierSet.hpp"
 #include "memory/allocation.hpp"
 #include "opto/addnode.hpp"
 #include "opto/graphKit.hpp"
@@ -61,8 +60,7 @@ private:
   static void test_null(Node*& ctrl, Node* val, Node*& null_ctrl, PhaseIdealLoop* phase);
   static void test_gc_state(Node*& ctrl, Node* raw_mem, Node*& heap_stable_ctrl,
                             PhaseIdealLoop* phase, int flags);
-  static void call_lrb_stub(Node*& ctrl, Node*& val, Node* load_addr, Node*& result_mem, Node* raw_mem,
-                            DecoratorSet decorators, PhaseIdealLoop* phase);
+  static void call_lrb_stub(Node*& ctrl, Node*& val, Node* load_addr, Node*& result_mem, Node* raw_mem, bool is_native, PhaseIdealLoop* phase);
   static void test_in_cset(Node*& ctrl, Node*& not_cset_ctrl, Node* val, Node* raw_mem, PhaseIdealLoop* phase);
   static void move_gc_state_test_out_of_loop(IfNode* iff, PhaseIdealLoop* phase);
   static void merge_back_to_back_tests(Node* n, PhaseIdealLoop* phase);
@@ -231,12 +229,12 @@ public:
   };
 
 private:
-  DecoratorSet _decorators;
+  bool _native;
 
 public:
-  ShenandoahLoadReferenceBarrierNode(Node* ctrl, Node* val, DecoratorSet decorators);
+  ShenandoahLoadReferenceBarrierNode(Node* ctrl, Node* val, bool native);
 
-  DecoratorSet decorators() const;
+  bool is_native() const;
   virtual int Opcode() const;
   virtual const Type* bottom_type() const;
   virtual const Type* Value(PhaseGVN* phase) const;

@@ -243,7 +243,7 @@ class UnixPath implements Path {
     }
 
     // returns {@code true} if this path is an empty path
-    boolean isEmpty() {
+    private boolean isEmpty() {
         return path.length == 0;
     }
 

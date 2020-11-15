@@ -30,6 +30,11 @@
 #include "utilities/align.hpp"
 #include "utilities/powerOfTwo.hpp"
 
+size_t CodeHeap::header_size() {
+  return sizeof(HeapBlock);
+}
+
+
 // Implementation of Heap
 
 CodeHeap::CodeHeap(const char* name, const int code_blob_type)
@@ -770,8 +775,7 @@ int CodeHeap::segmap_hops(size_t beg, size_t end) {
   if (beg < end) {
     // setup _segmap pointers for faster indexing
     address p = (address)_segmap.low() + beg;
-    int hops_expected
-      = checked_cast<int>(((end-beg-1)+(free_sentinel-2))/(free_sentinel-1));
+    int hops_expected = (int)(((end-beg-1)+(free_sentinel-2))/(free_sentinel-1));
     int nhops = 0;
     size_t ix = end-beg-1;
     while (p[ix] > 0) {

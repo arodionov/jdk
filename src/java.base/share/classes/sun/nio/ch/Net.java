@@ -226,31 +226,29 @@ public class Net {
     /**
      * Returns the local address after performing a SecurityManager#checkConnect.
      */
-    static InetSocketAddress getRevealedLocalAddress(SocketAddress sa) {
-        InetSocketAddress isa = (InetSocketAddress) sa;
+    static InetSocketAddress getRevealedLocalAddress(InetSocketAddress addr) {
         SecurityManager sm = System.getSecurityManager();
-        if (isa != null && sm != null) {
-            try {
-                sm.checkConnect(isa.getAddress().getHostAddress(), -1);
-            } catch (SecurityException e) {
-                // Return loopback address only if security check fails
-                isa = getLoopbackAddress(isa.getPort());
-            }
+        if (addr == null || sm == null)
+            return addr;
+
+        try{
+            sm.checkConnect(addr.getAddress().getHostAddress(), -1);
+            // Security check passed
+        } catch (SecurityException e) {
+            // Return loopback address only if security check fails
+            addr = getLoopbackAddress(addr.getPort());
         }
-        return isa;
+        return addr;
     }
 
-    static String getRevealedLocalAddressAsString(SocketAddress sa) {
-        InetSocketAddress isa = (InetSocketAddress) sa;
-        if (System.getSecurityManager() == null) {
-            return isa.toString();
-        } else {
-            return getLoopbackAddress(isa.getPort()).toString();
-        }
+    static String getRevealedLocalAddressAsString(InetSocketAddress addr) {
+        return System.getSecurityManager() == null ? addr.toString() :
+                getLoopbackAddress(addr.getPort()).toString();
     }
 
     private static InetSocketAddress getLoopbackAddress(int port) {
-        return new InetSocketAddress(InetAddress.getLoopbackAddress(), port);
+        return new InetSocketAddress(InetAddress.getLoopbackAddress(),
+                                     port);
     }
 
     private static final InetAddress anyLocalInet4Address;
@@ -574,13 +572,6 @@ public class Net {
         boolean preferIPv6 = isIPv6Available() &&
             (family != StandardProtocolFamily.INET);
         return connect0(preferIPv6, fd, remote, remotePort);
-    }
-
-    static int connect(ProtocolFamily family, FileDescriptor fd, SocketAddress remote)
-        throws IOException
-    {
-        InetSocketAddress isa = (InetSocketAddress) remote;
-        return connect(family, fd, isa.getAddress(), isa.getPort());
     }
 
     private static native int connect0(boolean preferIPv6,

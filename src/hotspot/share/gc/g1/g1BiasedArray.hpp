@@ -25,7 +25,6 @@
 #ifndef SHARE_GC_G1_G1BIASEDARRAY_HPP
 #define SHARE_GC_G1_G1BIASEDARRAY_HPP
 
-#include "memory/allocation.hpp"
 #include "memory/memRegion.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/powerOfTwo.hpp"
@@ -33,14 +32,10 @@
 // Implements the common base functionality for arrays that contain provisions
 // for accessing its elements using a biased index.
 // The element type is defined by the instantiating the template.
-class G1BiasedMappedArrayBase : public CHeapObj<mtGC> {
+class G1BiasedMappedArrayBase {
   friend class VMStructs;
-
-  void* _alloc_base;      // the address the unpadded array has been allocated to
-
 public:
   typedef size_t idx_t;
-
 protected:
   address _base;          // the real base address
   size_t _length;         // the length of the array
@@ -49,10 +44,12 @@ protected:
   uint _shift_by;         // the amount of bits to shift right when mapping to an index of the array.
 
 protected:
-  G1BiasedMappedArrayBase();
+
+  G1BiasedMappedArrayBase() : _base(NULL), _length(0), _biased_base(NULL),
+    _bias(0), _shift_by(0) { }
 
   // Allocate a new array, generic version.
-  address create_new_base_array(size_t length, size_t elem_size);
+  static address create_new_base_array(size_t length, size_t elem_size);
 
   // Initialize the members of this class. The biased start address of this array
   // is the bias (in elements) multiplied by the element size.
@@ -93,10 +90,8 @@ protected:
   void verify_biased_index_inclusive_end(idx_t biased_index) const PRODUCT_RETURN;
 
 public:
-  virtual ~G1BiasedMappedArrayBase();
-
-  // Return the length of the array in elements.
-  size_t length() const { return _length; }
+   // Return the length of the array in elements.
+   size_t length() const { return _length; }
 };
 
 // Array that provides biased access and mapping from (valid) addresses in the

@@ -33,7 +33,6 @@
 #include "logging/logStream.hpp"
 #include "logging/logConfiguration.hpp"
 #include "memory/heapInspection.hpp"
-#include "memory/metaspace/metaspaceReporter.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/symbol.hpp"
@@ -135,7 +134,7 @@ void VM_DeoptimizeAll::doit() {
         tcount = 0;
           int fcount = 0;
           // Deoptimize some selected frames.
-          for(StackFrameStream fst(thread, false /* update */, true /* process_frames */); !fst.is_done(); fst.next()) {
+          for(StackFrameStream fst(thread, false); !fst.is_done(); fst.next()) {
             if (fst.current()->can_be_deoptimized()) {
               if (fcount++ == fnum) {
                 fcount = 0;
@@ -185,7 +184,7 @@ void VM_PrintJNI::doit() {
 }
 
 void VM_PrintMetadata::doit() {
-  metaspace::MetaspaceReporter::print_report(_out, _scale, _flags);
+  MetaspaceUtils::print_report(_out, _scale, _flags);
 }
 
 VM_FindDeadlocks::~VM_FindDeadlocks() {
@@ -432,6 +431,16 @@ int VM_Exit::wait_for_threads_in_native_to_block() {
   }
 }
 
+bool VM_Exit::doit_prologue() {
+  if (log_is_enabled(Info, monitorinflation)) {
+    // Do a deflation in order to reduce the in-use monitor population
+    // that is reported by ObjectSynchronizer::log_in_use_monitor_details()
+    // at VM exit.
+    ObjectSynchronizer::request_deflate_idle_monitors();
+  }
+  return true;
+}
+
 void VM_Exit::doit() {
 
   if (VerifyBeforeExit) {
@@ -453,10 +462,6 @@ void VM_Exit::doit() {
   wait_for_threads_in_native_to_block();
 
   set_vm_exited();
-
-  // The ObjectMonitor subsystem uses perf counters so do this before
-  // we call exit_globals() so we don't run afoul of perfMemory_exit().
-  ObjectSynchronizer::do_final_audit_and_print_stats();
 
   // We'd like to call IdealGraphPrinter::clean_up() to finalize the
   // XML logging, but we can't safely do that here. The logic to make

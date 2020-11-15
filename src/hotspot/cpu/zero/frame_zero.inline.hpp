@@ -107,8 +107,7 @@ inline oop* frame::interpreter_frame_mirror_addr() const {
 }
 
 inline intptr_t* frame::interpreter_frame_mdp_addr() const {
-  fatal("Should not call this: Zero never profiles");
-  return NULL; // silence compiler warnings
+  return (intptr_t*) &(get_interpreterState()->_mdx);
 }
 
 inline intptr_t* frame::interpreter_frame_tos_address() const {

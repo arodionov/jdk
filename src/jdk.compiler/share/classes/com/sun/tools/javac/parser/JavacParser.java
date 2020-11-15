@@ -184,7 +184,8 @@ public class JavacParser implements Parser {
         endPosTable = newEndPosTable(keepEndPositions);
         this.allowYieldStatement = (!preview.isPreview(Feature.SWITCH_EXPRESSION) || preview.isEnabled()) &&
                 Feature.SWITCH_EXPRESSION.allowedInSource(source);
-        this.allowRecords = Feature.RECORDS.allowedInSource(source);
+        this.allowRecords = (!preview.isPreview(Feature.RECORDS) || preview.isEnabled()) &&
+                Feature.RECORDS.allowedInSource(source);
         this.allowSealedTypes = (!preview.isPreview(Feature.SEALED_CLASSES) || preview.isEnabled()) &&
                 Feature.SEALED_CLASSES.allowedInSource(source);
     }
@@ -932,18 +933,10 @@ public class JavacParser implements Parser {
             if (token.kind == INSTANCEOF) {
                 int pos = token.pos;
                 nextToken();
-                int typePos = token.pos;
-                JCExpression type = parseType();
-                JCTree pattern;
+                JCTree pattern = parseType();
                 if (token.kind == IDENTIFIER) {
                     checkSourceLevel(token.pos, Feature.PATTERN_MATCHING_IN_INSTANCEOF);
-                    JCModifiers mods = F.at(Position.NOPOS).Modifiers(0);
-                    JCVariableDecl var = toP(F.at(token.pos).VarDef(mods, ident(), type, null));
-                    TreeInfo.getStartPos(var);
-                    pattern = toP(F.at(typePos).BindingPattern(var));
-                    TreeInfo.getStartPos(pattern);
-                } else {
-                    pattern = type;
+                    pattern = toP(F.at(token.pos).BindingPattern(ident(), pattern));
                 }
                 odStack[top] = F.at(pos).TypeTest(odStack[top], pattern);
             } else {
@@ -3724,7 +3717,7 @@ public class JavacParser implements Parser {
         } else {
             int pos = token.pos;
             List<JCTree> errs;
-            if (token.kind == IDENTIFIER && token.name() == names.record) {
+            if (token.kind == IDENTIFIER && token.name() == names.record && preview.isEnabled()) {
                 checkSourceLevel(Feature.RECORDS);
                 JCErroneous erroneousTree = syntaxError(token.pos, List.of(mods), Errors.RecordHeaderExpected);
                 return toP(F.Exec(erroneousTree));
@@ -4221,7 +4214,7 @@ public class JavacParser implements Parser {
             (peekToken(TokenKind.IDENTIFIER, TokenKind.LPAREN) ||
              peekToken(TokenKind.IDENTIFIER, TokenKind.EOF) ||
              peekToken(TokenKind.IDENTIFIER, TokenKind.LT))) {
-            checkSourceLevel(Feature.RECORDS);
+             checkSourceLevel(Feature.RECORDS);
             return true;
         } else {
             return false;

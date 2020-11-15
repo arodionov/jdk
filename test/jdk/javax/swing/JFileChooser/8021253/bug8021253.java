@@ -47,41 +47,34 @@ public class bug8021253 {
     private static volatile boolean defaultKeyPressed;
     private static JFileChooser fileChooser;
     private static File file;
-    private static JFrame frame;
 
     public static void main(String[] args) throws Exception {
-        try {
-            Robot robot = new Robot();
-            robot.setAutoDelay(100);
 
-            SwingUtilities.invokeAndWait(new Runnable() {
-                public void run() {
-                    createAndShowGUI();
-                }
-            });
+        Robot robot = new Robot();
+        robot.setAutoDelay(50);
 
-            robot.waitForIdle();
-            robot.delay(1000);
-
-            SwingUtilities.invokeAndWait(new Runnable() {
-                public void run() {
-                    fileChooser.setSelectedFile(file);
-                }
-            });
-
-            robot.waitForIdle();
-
-            robot.keyPress(KeyEvent.VK_ENTER);
-            robot.keyRelease(KeyEvent.VK_ENTER);
-            robot.waitForIdle();
-
-            if (!defaultKeyPressed) {
-                throw new RuntimeException("Default button is not pressed");
+        SwingUtilities.invokeAndWait(new Runnable() {
+            public void run() {
+                createAndShowGUI();
             }
-        } finally {
-            if (frame != null) {
-                SwingUtilities.invokeAndWait(frame::dispose);
+        });
+
+        robot.waitForIdle();
+
+        SwingUtilities.invokeAndWait(new Runnable() {
+            public void run() {
+                fileChooser.setSelectedFile(file);
             }
+        });
+
+        robot.waitForIdle();
+
+        robot.keyPress(KeyEvent.VK_ENTER);
+        robot.keyRelease(KeyEvent.VK_ENTER);
+        robot.waitForIdle();
+
+        if (!defaultKeyPressed) {
+            throw new RuntimeException("Default button is not pressed");
         }
     }
 
@@ -89,7 +82,7 @@ public class bug8021253 {
 
         file = getTempFile();
 
-        frame = new JFrame("Test");
+        final JFrame frame = new JFrame("Test");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setSize(200, 300);
 
@@ -104,7 +97,6 @@ public class bug8021253 {
 
         frame.getContentPane().add(BorderLayout.CENTER, fileChooser);
         frame.setSize(fileChooser.getPreferredSize());
-        frame.setLocationRelativeTo(null);
         frame.setVisible(true);
     }
 

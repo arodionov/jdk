@@ -430,16 +430,11 @@ class SSLStreams {
             handshaking.lock();
             ByteBuffer tmp = allocate(BufType.APPLICATION);
             WrapperResult r;
-            Status st;
-            HandshakeStatus hs;
             do {
                 tmp.clear();
                 tmp.flip ();
                 r = wrapper.wrapAndSendX (tmp, true);
-                hs = r.result.getHandshakeStatus();
-                st = r.result.getStatus();
-            } while (st != Status.CLOSED &&
-                        !(st == Status.OK && hs == HandshakeStatus.NOT_HANDSHAKING));
+            } while (r.result.getStatus() != Status.CLOSED);
         } finally {
             handshaking.unlock();
         }

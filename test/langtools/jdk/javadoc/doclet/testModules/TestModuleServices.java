@@ -135,23 +135,31 @@ public class TestModuleServices extends JavadocTester {
 
         checkOutput("moduleServiceProvider/module-summary.html", true,
                 """
-                    <div class="col-first even-row-color"><a href="../moduleService/pkgService/Service.ht\
-                    ml" title="interface in pkgService">Service</a></div>
-                    <div class="col-last even-row-color">
-                    <div class="block">Provides a service whose name is ServiceProvider.</div>""");
+                    <tr class="alt-color">
+                    <th class="col-first" scope="row"><a href="../moduleService/pkgService/Service.h\
+                    tml" title="interface in pkgService">Service</a></th>
+                    <td class="col-last">
+                    <div class="block">Provides a service whose name is ServiceProvider.</div>
+                    </td>
+                    </tr>""");
         checkOutput("moduleServiceUser/module-summary.html", true,
                 """
-                    <div class="col-first even-row-color"><a href="../moduleService/pkgService/Service.ht\
-                    ml" title="interface in pkgService">Service</a></div>
-                    <div class="col-last even-row-color">
-                    <div class="block">If no other provider is found, a default internal implementat\
-                    ion will be used.</div>""");
+                    <tr class="alt-color">
+                    <th class="col-first" scope="row"><a href="../moduleService/pkgService/Service.h\
+                    tml" title="interface in pkgService">Service</a></th>
+                    <td class="col-last">
+                    <div class="block">If no other provider is found, a default internal implementation will be used.</div>
+                    </td>
+                    </tr>""");
         checkOutput("moduleServiceUserNoDescription/module-summary.html", true,
                 """
-                    <div class="col-first even-row-color"><a href="../moduleService/pkgService/Service.ht\
-                    ml" title="interface in pkgService">Service</a></div>
-                    <div class="col-last even-row-color">
-                    <div class="block">A service Interface for service providers.</div>""");
+                    <tr class="alt-color">
+                    <th class="col-first" scope="row"><a href="../moduleService/pkgService/Service.h\
+                    tml" title="interface in pkgService">Service</a></th>
+                    <td class="col-last">
+                    <div class="block">A service Interface for service providers.</div>
+                    </td>
+                    </tr>""");
         checkOutput("moduleServiceProvider/module-summary.html", false,
                 "A service Interface for service providers.");
         checkOutput("moduleServiceUser/module-summary.html", false,
@@ -201,15 +209,26 @@ public class TestModuleServices extends JavadocTester {
 
         checkOutput("m/module-summary.html", true,
                 """
-                    <div class="caption"><span>Uses</span></div>
-                    <div class="details-table two-column-summary">
-                    <div class="table-header col-first">Type</div>
-                    <div class="table-header col-last">Description</div>
-                    <div class="col-first even-row-color"><a href="p1/A.html" title="class in p1">A</a></div>
-                    <div class="col-last even-row-color">&nbsp;</div>
-                    <div class="col-first odd-row-color"><a href="p1/B.html" title="class in p1">B</a></div>
-                    <div class="col-last odd-row-color">&nbsp;</div>
-                    </div>
+                    <div class="uses-summary">
+                    <table class="details-table">
+                    <caption><span>Uses</span></caption>
+                    <thead>
+                    <tr>
+                    <th class="col-first" scope="col">Type</th>
+                    <th class="col-last" scope="col">Description</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr class="alt-color">
+                    <th class="col-first" scope="row"><a href="p1/A.html" title="class in p1">A</a></th>
+                    <td class="col-last">&nbsp;</td>
+                    </tr>
+                    <tr class="row-color">
+                    <th class="col-first" scope="row"><a href="p1/B.html" title="class in p1">B</a></th>
+                    <td class="col-last">&nbsp;</td>
+                    </tr>
+                    </tbody>
+                    </table>
                     """);
 
     }
@@ -236,13 +255,22 @@ public class TestModuleServices extends JavadocTester {
 
         checkOutput("m/module-summary.html", true,
                 """
-                    <div class="caption"><span>Uses</span></div>
-                    <div class="details-table two-column-summary">
-                    <div class="table-header col-first">Type</div>
-                    <div class="table-header col-last">Description</div>
-                    <div class="col-first even-row-color"><a href="p1/A.html" title="class in p1">A</a></div>
-                    <div class="col-last even-row-color">&nbsp;</div>
-                    </div>
+                    <div class="uses-summary">
+                    <table class="details-table">
+                    <caption><span>Uses</span></caption>
+                    <thead>
+                    <tr>
+                    <th class="col-first" scope="col">Type</th>
+                    <th class="col-last" scope="col">Description</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr class="alt-color">
+                    <th class="col-first" scope="row"><a href="p1/A.html" title="class in p1">A</a></th>
+                    <td class="col-last">&nbsp;</td>
+                    </tr>
+                    </tbody>
+                    </table>
                     """);
 
     }
@@ -299,15 +327,27 @@ public class TestModuleServices extends JavadocTester {
 
         checkOutput("m/module-summary.html", true,
                 """
-                    <div class="caption"><span>Provides</span></div>
-                    <div class="details-table two-column-summary">
-                    <div class="table-header col-first">Type</div>
-                    <div class="table-header col-last">Description</div>
-                    <div class="col-first even-row-color"><a href="p1/A.html" title="interface in p1">A</a></div>
-                    <div class="col-last even-row-color">&nbsp;<br>(<span class="implementation-label">Implementation(s):</span>&nbsp;<a href="p1/B.html" title="class in p1">B</a>)</div>
-                    <div class="col-first odd-row-color"><a href="p2/A.html" title="interface in p2">A</a></div>
-                    <div class="col-last odd-row-color">&nbsp;<br>(<span class="implementation-label">Implementation(s):</span>&nbsp;<a href="p2/B.html" title="class in p2">B</a>)</div>
-                    </div>
+                    <div class="provides-summary">
+                    <table class="details-table">
+                    <caption><span>Provides</span></caption>
+                    <thead>
+                    <tr>
+                    <th class="col-first" scope="col">Type</th>
+                    <th class="col-last" scope="col">Description</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr class="alt-color">
+                    <th class="col-first" scope="row"><a href="p1/A.html" title="interface in p1">A</a></th>
+                    <td class="col-last">&nbsp;<br>(<span class="implementation-label">Implementatio\
+                    n(s):</span>&nbsp;<a href="p1/B.html" title="class in p1">B</a>)</td>
+                    </tr>
+                    <tr class="row-color">
+                    <th class="col-first" scope="row"><a href="p2/A.html" title="interface in p2">A</a></th>
+                    <td class="col-last">&nbsp;<br>(<span class="implementation-label">Implementatio\
+                    n(s):</span>&nbsp;<a href="p2/B.html" title="class in p2">B</a>)</td>
+                    </tr>
+                    </tbody>
                     """);
 
     }
@@ -338,15 +378,24 @@ public class TestModuleServices extends JavadocTester {
 
         checkOutput("m/module-summary.html", true,
                 """
-                    <div class="caption"><span>Provides</span></div>
-                    <div class="details-table two-column-summary">
-                    <div class="table-header col-first">Type</div>
-                    <div class="table-header col-last">Description</div>
-                    <div class="col-first even-row-color"><a href="p1/A.html" title="interface in p1">A</a></div>
-                    <div class="col-last even-row-color">
+                    <div class="provides-summary">
+                    <table class="details-table">
+                    <caption><span>Provides</span></caption>
+                    <thead>
+                    <tr>
+                    <th class="col-first" scope="col">Type</th>
+                    <th class="col-last" scope="col">Description</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr class="alt-color">
+                    <th class="col-first" scope="row"><a href="p1/A.html" title="interface in p1">A</a></th>
+                    <td class="col-last">
                     <div class="block">abc</div>
-                    </div>
-                    </div>
+                    </td>
+                    </tr>
+                    </tbody>
+                    </table>
                     """);
 
     }
@@ -381,26 +430,43 @@ public class TestModuleServices extends JavadocTester {
 
         checkOutput("m/module-summary.html", true,
                 """
-                    <div class="caption"><span>Provides</span></div>
-                    <div class="details-table two-column-summary">
-                    <div class="table-header col-first">Type</div>
-                    <div class="table-header col-last">Description</div>
-                    <div class="col-first even-row-color"><a href="p1/A.html" title="interface in p1">A</a></div>
-                    <div class="col-last even-row-color">
+                    <div class="provides-summary">
+                    <table class="details-table">
+                    <caption><span>Provides</span></caption>
+                    <thead>
+                    <tr>
+                    <th class="col-first" scope="col">Type</th>
+                    <th class="col-last" scope="col">Description</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr class="alt-color">
+                    <th class="col-first" scope="row"><a href="p1/A.html" title="interface in p1">A</a></th>
+                    <td class="col-last">
                     <div class="block">abc</div>
-                    </div>
-                    </div>
-                    """,
+                    </td>
+                    </tr>
+                    </tbody>
+                    </table>""",
                 """
-                    <div class="caption"><span>Uses</span></div>
-                    <div class="details-table two-column-summary">
-                    <div class="table-header col-first">Type</div>
-                    <div class="table-header col-last">Description</div>
-                    <div class="col-first even-row-color"><a href="p2/B.html" title="class in p2">B</a></div>
-                    <div class="col-last even-row-color">
+                    <div class="uses-summary">
+                    <table class="details-table">
+                    <caption><span>Uses</span></caption>
+                    <thead>
+                    <tr>
+                    <th class="col-first" scope="col">Type</th>
+                    <th class="col-last" scope="col">Description</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr class="alt-color">
+                    <th class="col-first" scope="row"><a href="p2/B.html" title="class in p2">B</a></th>
+                    <td class="col-last">
                     <div class="block">def</div>
-                    </div>
-                    </div>
+                    </td>
+                    </tr>
+                    </tbody>
+                    </table>
                     """);
 
     }

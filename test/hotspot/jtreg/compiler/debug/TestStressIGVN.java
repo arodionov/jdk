@@ -32,7 +32,8 @@ import jdk.test.lib.Asserts;
  * @bug 8252219
  * @requires vm.debug == true & vm.compiler2.enabled
  * @summary Tests that compilations with the same seed yield the same IGVN
- *          trace.
+ *          trace, and compilations with different seeds yield different IGVN
+ *          traces.
  * @library /test/lib /
  * @run driver compiler.debug.TestStressIGVN
  */
@@ -42,7 +43,7 @@ public class TestStressIGVN {
     static String igvnTrace(int stressSeed) throws Exception {
         String className = TestStressIGVN.class.getName();
         String[] procArgs = {
-            "-Xcomp", "-XX:-TieredCompilation", "-XX:-Inline",
+            "-Xcomp", "-XX:-TieredCompilation",
             "-XX:CompileOnly=" + className + "::sum", "-XX:+TraceIterativeGVN",
             "-XX:+StressIGVN", "-XX:StressSeed=" + stressSeed,
             className, "10"};
@@ -59,10 +60,10 @@ public class TestStressIGVN {
 
     public static void main(String[] args) throws Exception {
         if (args.length == 0) {
-            for (int s = 0; s < 10; s++) {
-                Asserts.assertEQ(igvnTrace(s), igvnTrace(s),
-                    "got different IGVN traces for the same seed");
-            }
+            Asserts.assertEQ(igvnTrace(10), igvnTrace(10),
+                "got different IGVN traces for the same seed");
+            Asserts.assertNE(igvnTrace(10), igvnTrace(20),
+                "got the same IGVN trace for different seeds");
         } else if (args.length > 0) {
             sum(Integer.parseInt(args[0]));
         }

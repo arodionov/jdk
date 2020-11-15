@@ -74,24 +74,25 @@ public class TestJavaFX extends JavadocTester {
                     <dl class="notes">
                     <dt>Property description:</dt>""",
                 """
-                    <div class="col-first odd-row-color"><code><a href="C.DoubleProperty.html" title="class in pkg1">C.DoubleProperty</a></code></div>
-                    <div class="col-second odd-row-color"><code><span class="member-name-link"><a href="#rateProperty">rate</a></span></code></div>
-                    <div class="col-last odd-row-color">
+                    <td class="col-first"><code><a href="C.DoubleProperty.html" title="class in pkg1">C.DoubleProperty</a></code></td>
+                    <th class="col-second" scope="row"><code><span class="member-name-link"><a href=\
+                    "#rateProperty">rate</a></span></code></th>
+                    <td class="col-last">
                     <div class="block">Defines the direction/speed at which the <code>Timeline</code> is expected to
-                     be played.</div>""",
+                     be played.</div>
+                    </td>""",
                 "<dt>Default value:</dt>",
                 """
                     <dt>Since:</dt>
                     <dd>JavaFX 8.0</dd>""",
                 "<dt>Property description:</dt>",
                 """
-                    <div class="col-second even-row-color method-summary-table-tab2 method-summary-table-\
-                    tab4 method-summary-table"><code><span class="member-name-link"><a href="#setTes\
-                    tMethodProperty()">setTestMethodProperty</a></span>()</code></div>""",
+                    <th class="col-second" scope="row"><code><span class="member-name-link"><a href=\
+                    "#setTestMethodProperty()">setTestMethodProperty</a></span>()</code></th>""",
                 """
-                    <div class="col-second even-row-color"><code><span class="member-name-link"><a href="\
-                    #pausedProperty">paused</a></span></code></div>
-                    <div class="col-last even-row-color">
+                    <th class="col-second" scope="row"><code><span class="member-name-link"><a href=\
+                    "#pausedProperty">paused</a></span></code></th>
+                    <td class="col-last">
                     <div class="block">Defines if paused.</div>""",
                 """
                     <section class="detail" id="pausedProperty">
@@ -174,40 +175,37 @@ public class TestJavaFX extends JavadocTester {
                 """
                     <section class="property-summary" id="property.summary">
                     <h2>Property Summary</h2>
-                    <div class="caption"><span>Properties</span></div>
-                    <div class="summary-table three-column-summary">""",
+                    <div class="member-summary">
+                    <table class="summary-table">
+                    <caption><span>Properties</span></caption>""",
                 """
-                    <div class="col-first even-row-color"><code><a href="C.BooleanProperty.html" title="class in pkg1">C.BooleanProperty</a></code></div>
+                    <tr class="alt-color">
+                    <td class="col-first"><code><a href="C.BooleanProperty.html" title="class in pkg1">C.BooleanProperty</a></code></td>
                     """,
                 """
-                    <div class="col-first odd-row-color"><code><a href="C.DoubleProperty.html" title="class in pkg1">C.DoubleProperty</a></code></div>
+                    <tr class="row-color">
+                    <td class="col-first"><code><a href="C.DoubleProperty.html" title="class in pkg1">C.DoubleProperty</a></code></td>
                     """);
 
         checkOutput("pkg1/C.html", false,
                 "A()",
                 """
-                    <h2>Property Summary</h2>
-                    <div id="method-summary-table">
-                    <div class="table-tabs" role="tablist" aria-orientation="horizontal">\
-                    <button id="method-summary-table-tab0" role="tab" aria-selected="true" aria-cont\
-                    rols="method-summary-table.tabpanel" tabindex="0" onkeydown="switchTab(event)" o\
-                    nclick="show('method-summary-table', 'method-summary-table', 3)" class="active-t\
-                    able-tab">All Methods</button>\
-                    <button id="method-summary-table-tab2" role="tab" aria-selected="false" aria-con\
-                    trols="method-summary-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)"\
-                     onclick="show('method-summary-table', 'method-summary-table-tab2', 3)" class="t\
-                    able-tab">Instance Methods</button>\
-                    <button id="method-summary-table-tab4" role="tab" aria-selected="false" aria-con\
-                    trols="method-summary-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)"\
-                     onclick="show('method-summary-table', 'method-summary-table-tab4', 3)" class="t\
-                    able-tab">Concrete Methods</button>\
-                    </div>""",
+                    <h2 id="property.summary">Property Summary</h2>
+                    <div class="member-summary">
+                    <div role="tablist" aria-orientation="horizontal"><button role="tab" aria-select\
+                    ed="true" aria-controls="member-summary_tabpanel" tabindex="0" onkeydown="switch\
+                    Tab(event)" id="t0" class="active-table-tab">All Methods</button><button role="t\
+                    ab" aria-selected="false" aria-controls="member-summary_tabpanel" tabindex="-1" \
+                    onkeydown="switchTab(event)" id="t2" class="table-tab" onclick="show(2);">Instan\
+                    ce Methods</button><button role="tab" aria-selected="false" aria-controls="membe\
+                    r-summary_tabpanel" tabindex="-1" onkeydown="switchTab(event)" id="t4" class="ta\
+                    ble-tab" onclick="show(8);">Concrete Methods</button></div>""",
                 """
-                    <tr id="i0" class="even-row-color">
+                    <tr id="i0" class="alt-color">
                     <td class="col-first"><code><a href="C.BooleanProperty.html" title="class in pkg1">C.BooleanProperty</a></code></td>
                     """,
                 """
-                    <tr id="i1" class="odd-row-color">
+                    <tr id="i1" class="row-color">
                     <td class="col-first"><code><a href="C.DoubleProperty.html" title="class in pkg1">C.DoubleProperty</a></code></td>
                     """);
 
@@ -274,27 +272,22 @@ public class TestJavaFX extends JavadocTester {
                 """
                     <section class="property-summary" id="property.summary">
                     <h2>Property Summary</h2>
-                    <div class="caption"><span>Properties</span></div>
-                    <div class="summary-table three-column-summary">""");
+                    <div class="member-summary">
+                    <table class="summary-table">
+                    <caption><span>Properties</span></caption>""");
 
         checkOutput("pkg2/Test.html", false,
                 """
                     <h2>Property Summary</h2>
-                    <div id="method-summary-table">
-                    <div class="table-tabs" role="tablist" aria-orientation="horizontal">\
-                    <button id="method-summary-table-tab0" role="tab" aria-selected="true" aria-cont\
-                    rols="method-summary-table.tabpanel" tabindex="0" onkeydown="switchTab(event)" o\
-                    nclick="show('method-summary-table', 'method-summary-table', 3)" class="active-t\
-                    able-tab">All Methods</button>\
-                    <button id="method-summary-table-tab2" role="tab" aria-selected="false" aria-con\
-                    trols="method-summary-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)"\
-                     onclick="show('method-summary-table', 'method-summary-table-tab2', 3)" class="t\
-                    able-tab">Instance Methods</button>\
-                    <button id="method-summary-table-tab4" role="tab" aria-selected="false" aria-con\
-                    trols="method-summary-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)"\
-                     onclick="show('method-summary-table', 'method-summary-table-tab4', 3)" class="t\
-                    able-tab">Concrete Methods</button>\
-                    </div>""");
+                    <div class="member-summary">
+                    <div role="tablist" aria-orientation="horizontal"><button role="tab" aria-select\
+                    ed="true" aria-controls="member-summary_tabpanel" tabindex="0" onkeydown="switch\
+                    Tab(event)" id="t0" class="active-table-tab">All Methods</button><button role="t\
+                    ab" aria-selected="false" aria-controls="member-summary_tabpanel" tabindex="-1" \
+                    onkeydown="switchTab(event)" id="t2" class="table-tab" onclick="show(2);">Instan\
+                    ce Methods</button><button role="tab" aria-selected="false" aria-controls="membe\
+                    r-summary_tabpanel" tabindex="-1" onkeydown="switchTab(event)" id="t4" class="ta\
+                    ble-tab" onclick="show(8);">Concrete Methods</button></div>""");
     }
 
     /*
@@ -312,40 +305,38 @@ public class TestJavaFX extends JavadocTester {
         checkOutput("pkg2/Test.html", false, "<h2>Property Summary</h2>");
         checkOutput("pkg2/Test.html", true,
                 """
-                    <div class="table-header col-first">Modifier and Type</div>
-                    <div class="table-header col-second">Method</div>
-                    <div class="table-header col-last">Description</div>
-                    <div class="col-first even-row-color method-summary-table-tab2 method-summary-table-t\
-                    ab4 method-summary-table"><code>&lt;T&gt;&nbsp;java.lang.Object</code></div>
-                    <div class="col-second even-row-color method-summary-table-tab2 method-summary-table-\
-                    tab4 method-summary-table"><code><span class="member-name-link"><a href="#alphaP\
-                    roperty(java.util.List)">alphaProperty</a></span>&#8203;(java.util.List&lt;T&gt;\
-                    &nbsp;foo)</code></div>
-                    <div class="col-last even-row-color method-summary-table-tab2 method-summary-table-ta\
-                    b4 method-summary-table">&nbsp;</div>
-                    <div class="col-first odd-row-color method-summary-table-tab2 method-summary-table-t\
-                    ab4 method-summary-table"><code>java.lang.Object</code></div>
-                    <div class="col-second odd-row-color method-summary-table-tab2 method-summary-table-\
-                    tab4 method-summary-table"><code><span class="member-name-link"><a href="#betaPr\
-                    operty()">betaProperty</a></span>()</code></div>
-                    <div class="col-last odd-row-color method-summary-table-tab2 method-summary-table-ta\
-                    b4 method-summary-table">&nbsp;</div>
-                    <div class="col-first even-row-color method-summary-table-tab2 method-summary-table-t\
-                    ab4 method-summary-table"><code>java.util.List&lt;java.util.Set&lt;? super java.\
-                    lang.Object&gt;&gt;</code></div>
-                    <div class="col-second even-row-color method-summary-table-tab2 method-summary-table-\
-                    tab4 method-summary-table"><code><span class="member-name-link"><a href="#deltaP\
-                    roperty()">deltaProperty</a></span>()</code></div>
-                    <div class="col-last even-row-color method-summary-table-tab2 method-summary-table-ta\
-                    b4 method-summary-table">&nbsp;</div>
-                    <div class="col-first odd-row-color method-summary-table-tab2 method-summary-table-t\
-                    ab4 method-summary-table"><code>java.util.List&lt;java.lang.String&gt;</code></d\
-                    iv>
-                    <div class="col-second odd-row-color method-summary-table-tab2 method-summary-table-\
-                    tab4 method-summary-table"><code><span class="member-name-link"><a href="#gammaP\
-                    roperty()">gammaProperty</a></span>()</code></div>
-                    <div class="col-last odd-row-color method-summary-table-tab2 method-summary-table-ta\
-                    b4 method-summary-table">&nbsp;</div>"""
+                    <thead>
+                    <tr>
+                    <th class="col-first" scope="col">Modifier and Type</th>
+                    <th class="col-second" scope="col">Method</th>
+                    <th class="col-last" scope="col">Description</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr class="alt-color" id="i0">
+                    <td class="col-first"><code>&lt;T&gt;&nbsp;java.lang.Object</code></td>
+                    <th class="col-second" scope="row"><code><span class="member-name-link"><a href=\
+                    "#alphaProperty(java.util.List)">alphaProperty</a></span>&#8203;(java.util.List&\
+                    lt;T&gt;&nbsp;foo)</code></th>
+                    <td class="col-last">&nbsp;</td>
+                    </tr>
+                    <tr class="row-color" id="i1">
+                    <td class="col-first"><code>java.lang.Object</code></td>
+                    <th class="col-second" scope="row"><code><span class="member-name-link"><a href=\
+                    "#betaProperty()">betaProperty</a></span>()</code></th>
+                    <td class="col-last">&nbsp;</td>
+                    </tr>
+                    <tr class="alt-color" id="i2">
+                    <td class="col-first"><code>java.util.List&lt;java.util.Set&lt;? super java.lang.Object&gt;&gt;</code></td>
+                    <th class="col-second" scope="row"><code><span class="member-name-link"><a href=\
+                    "#deltaProperty()">deltaProperty</a></span>()</code></th>
+                    <td class="col-last">&nbsp;</td>
+                    </tr>
+                    <tr class="row-color" id="i3">
+                    <td class="col-first"><code>java.util.List&lt;java.lang.String&gt;</code></td>
+                    <th class="col-second" scope="row"><code><span class="member-name-link"><a href=\
+                    "#gammaProperty()">gammaProperty</a></span>()</code></th>
+                    <td class="col-last">&nbsp;</td>"""
         );
     }
 

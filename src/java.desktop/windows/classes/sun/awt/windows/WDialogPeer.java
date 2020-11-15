@@ -36,8 +36,6 @@ import java.awt.peer.DialogPeer;
 import sun.awt.AWTAccessor;
 import sun.awt.im.InputMethodManager;
 
-import static sun.java2d.SunGraphicsEnvironment.toUserSpace;
-
 final class WDialogPeer extends WWindowPeer implements DialogPeer {
     // Toolkit & peer internals
 
@@ -119,8 +117,8 @@ final class WDialogPeer extends WWindowPeer implements DialogPeer {
         if (((Dialog)target).isUndecorated()) {
             return super.getMinimumSize();
         }
-        return toUserSpace(getGraphicsConfiguration(),
-                           getSysMinWidth(), getSysMinHeight());
+        return new Dimension(scaleDownX(getSysMinWidth()),
+                             scaleDownY(getSysMinHeight()));
     }
 
     @Override

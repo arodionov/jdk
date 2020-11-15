@@ -53,7 +53,7 @@ public class LambdaProxyCallerIsHidden extends DynamicArchiveTestBase {
         String mainClass = "LambdaProxyCallerIsHiddenApp";
 
         dump(topArchiveName,
-            "-Xlog:class+load,cds+dynamic,cds=debug",
+            "-Xlog:class+load,cds+dynamic,cds",
             "-cp", appJar, mainClass)
             .assertNormalExit(output -> {
                 output.shouldMatch("Skipping.LambdaHello_0x.*[$][$]Lambda[$].*:.Hidden.class")

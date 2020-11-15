@@ -65,7 +65,8 @@ public class DropArgumentsTest {
         };
     }
 
-    @Test(dataProvider = "dropArgumentsToMatchNPEData", expectedExceptions = { NullPointerException.class })
+    @Test(dataProvider = "dropArgumentsToMatchNPEData")
+    @ExpectedExceptions(NullPointerException.class)
     public void dropArgumentsToMatchNPE(MethodHandle target, int pos, List<Class<?>> valueType, int skip) {
         MethodHandles.dropArgumentsToMatch(target, pos, valueType , skip);
     }
@@ -84,12 +85,14 @@ public class DropArgumentsTest {
         };
     }
 
-    @Test(dataProvider = "dropArgumentsToMatchIAEData", expectedExceptions = { IllegalArgumentException.class })
+    @Test(dataProvider = "dropArgumentsToMatchIAEData")
+    @ExpectedExceptions(IllegalArgumentException.class)
     public void dropArgumentsToMatchIAE(MethodHandle target, int pos, List<Class<?>> valueType, int skip) {
         MethodHandles.dropArgumentsToMatch(target, pos, valueType , skip);
     }
 
-    @Test(expectedExceptions = { IllegalArgumentException.class })
+    @Test
+    @ExpectedExceptions(IllegalArgumentException.class)
     public void dropArgumentsToMatchTestWithVoid() throws Throwable {
         MethodHandle cat = lookup().findVirtual(String.class, "concat",
                                    MethodType.methodType(String.class, String.class));

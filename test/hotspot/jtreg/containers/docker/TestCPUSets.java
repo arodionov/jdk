@@ -24,7 +24,6 @@
 
 /*
  * @test
- * @key cgroups
  * @summary Test JVM's awareness of cpu sets (cpus and mems)
  * @requires docker.support
  * @requires (os.arch != "s390x")

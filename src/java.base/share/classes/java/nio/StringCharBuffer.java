@@ -155,31 +155,20 @@ class StringCharBuffer                                  // package-private
         if (!(ob instanceof CharBuffer))
             return false;
         CharBuffer that = (CharBuffer)ob;
-        int thisPos = this.position();
-        int thisRem = this.limit() - thisPos;
-        int thatPos = that.position();
-        int thatRem = that.limit() - thatPos;
-        if (thisRem < 0 || thisRem != thatRem)
+        if (this.remaining() != that.remaining())
             return false;
-        return BufferMismatch.mismatch(this, thisPos,
-                                       that, thatPos,
-                                       thisRem) < 0;
+        return BufferMismatch.mismatch(this, this.position(),
+                                       that, that.position(),
+                                       this.remaining()) < 0;
     }
 
     public int compareTo(CharBuffer that) {
-        int thisPos = this.position();
-        int thisRem = this.limit() - thisPos;
-        int thatPos = that.position();
-        int thatRem = that.limit() - thatPos;
-        int length = Math.min(thisRem, thatRem);
-        if (length < 0)
-            return -1;
-        int i = BufferMismatch.mismatch(this, thisPos,
-                                        that, thatPos,
-                                        length);
+        int i = BufferMismatch.mismatch(this, this.position(),
+                                        that, that.position(),
+                                        Math.min(this.remaining(), that.remaining()));
         if (i >= 0) {
-            return Character.compare(this.get(thisPos + i), that.get(thatPos + i));
+            return Character.compare(this.get(this.position() + i), that.get(that.position() + i));
         }
-        return thisRem - thatRem;
+        return this.remaining() - that.remaining();
     }
 }

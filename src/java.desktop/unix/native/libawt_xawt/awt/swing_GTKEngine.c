@@ -23,10 +23,6 @@
  * questions.
  */
 
-#ifdef HEADLESS
-    #error This file should not be included in headless library
-#endif
-
 #include "gtk_interface.h"
 #include "com_sun_java_swing_plaf_gtk_GTKEngine.h"
 #include <jni_util.h>
@@ -350,8 +346,10 @@ Java_com_sun_java_swing_plaf_gtk_GTKEngine_nativeFinishPainting(
 JNIEXPORT void JNICALL Java_com_sun_java_swing_plaf_gtk_GTKEngine_native_1switch_1theme(
         JNIEnv *env, jobject this)
 {
-    // Note that gtk->flush_event_loop takes care of locks (7053002), gdk_threads_enter/gdk_threads_leave should not be used.
+    // Note that flush_gtk_event_loop takes care of locks (7053002)
+    gtk->gdk_threads_enter();
     gtk->flush_event_loop();
+    gtk->gdk_threads_leave();
 }
 
 /*

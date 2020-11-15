@@ -45,7 +45,7 @@ public class LambdaCustomLoader extends DynamicArchiveTestBase {
         String mainClass = "CustomLoaderApp";
 
         dump(topArchiveName,
-            "-Xlog:class+load,cds=debug,cds+dynamic",
+            "-Xlog:class+load,cds,cds+dynamic",
             "-cp", appJar, mainClass, appJar)
             .assertNormalExit(output -> {
                 output.shouldMatch("Skipping.LambHello[$][$]Lambda[$].*0x.*:.Hidden.class")
@@ -53,7 +53,7 @@ public class LambdaCustomLoader extends DynamicArchiveTestBase {
             });
 
         run(topArchiveName,
-            "-Xlog:class+load,class+unload",
+            "-Xlog:class+load,class+unload=info",
             "-cp", appJar, mainClass, appJar)
             .assertNormalExit(output -> {
                 output.shouldMatch("class.load.*LambHello[$][$]Lambda[$].*0x.*source:.LambHello")

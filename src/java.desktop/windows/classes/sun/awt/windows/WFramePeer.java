@@ -38,9 +38,7 @@ import sun.awt.AWTAccessor;
 import sun.awt.im.InputMethodManager;
 import sun.security.action.GetPropertyAction;
 
-import static sun.java2d.SunGraphicsEnvironment.getGCDeviceBounds;
-import static sun.java2d.SunGraphicsEnvironment.toDeviceSpaceAbs;
-import static sun.java2d.SunGraphicsEnvironment.toUserSpace;
+import static sun.java2d.SunGraphicsEnvironment.convertToDeviceSpace;
 
 class WFramePeer extends WWindowPeer implements FramePeer {
 
@@ -99,9 +97,10 @@ class WFramePeer extends WWindowPeer implements FramePeer {
      */
     private Rectangle adjustMaximizedBounds(Rectangle bounds) {
         // All calculations should be done in the device space
-        bounds = toDeviceSpaceAbs(bounds);
+        bounds = convertToDeviceSpace(bounds);
+
         GraphicsConfiguration gc = getGraphicsConfiguration();
-        Rectangle currentDevBounds = getGCDeviceBounds(gc);
+        Rectangle currentDevBounds = convertToDeviceSpace(gc, gc.getBounds());
         // Prepare data for WM_GETMINMAXINFO message.
         // ptMaxPosition should be in coordinate system of the current monitor,
         // not the main monitor, or monitor on which we maximize the window.
@@ -149,13 +148,13 @@ class WFramePeer extends WWindowPeer implements FramePeer {
 
     @Override
     public final Dimension getMinimumSize() {
-        GraphicsConfiguration gc = getGraphicsConfiguration();
         Dimension d = new Dimension();
         if (!((Frame)target).isUndecorated()) {
-            d.setSize(toUserSpace(gc, getSysMinWidth(), getSysMinHeight()));
+            d.setSize(scaleDownX(getSysMinWidth()),
+                      scaleDownY(getSysMinHeight()));
         }
-        if (((Frame) target).getMenuBar() != null) {
-            d.height += toUserSpace(gc, 0, getSysMenuHeight()).height;
+        if (((Frame)target).getMenuBar() != null) {
+            d.height += scaleDownY(getSysMenuHeight());
         }
         return d;
     }

@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2018, 2020 SAP SE. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,144 +26,162 @@
 #ifndef SHARE_MEMORY_METASPACE_METASPACESTATISTICS_HPP
 #define SHARE_MEMORY_METASPACE_METASPACESTATISTICS_HPP
 
-#include "memory/metaspace.hpp"             // for MetadataType enum
-#include "memory/metaspace/chunklevel.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "memory/metaspace.hpp" // for MetadataType enum
+#include "memory/metaspace/metachunk.hpp" // for ChunkIndex enum
 
 class outputStream;
 
 namespace metaspace {
 
-// Contains a number of data output structures:
-//
-// - cm_stats_t
-// - clms_stats_t -> arena_stats_t -> in_use_chunk_stats_t
-//
-// used for the various XXXX::add_to_statistic() methods in MetaspaceArena, ClassLoaderMetaspace
-//  and ChunkManager, respectively.
+// Contains statistics for a number of free chunks.
+class FreeChunksStatistics {
+  uintx _num;         // Number of chunks
+  size_t _cap;        // Total capacity, in words
 
-struct ChunkManagerStats {
+public:
+  FreeChunksStatistics();
 
-  // How many chunks per level are checked in.
-  int _num_chunks[chunklevel::NUM_CHUNK_LEVELS];
+  void reset();
 
-  // Size, in words, of the sum of all committed areas in this chunk manager, per level.
-  size_t _committed_word_size[chunklevel::NUM_CHUNK_LEVELS];
+  uintx num() const { return _num; }
+  size_t cap() const { return _cap; }
 
-  ChunkManagerStats() : _num_chunks(), _committed_word_size() {}
+  void add(uintx n, size_t s);
+  void add(const FreeChunksStatistics& other);
+  void print_on(outputStream* st, size_t scale) const;
 
-  void add(const ChunkManagerStats& other);
+}; // end: FreeChunksStatistics
 
-  // Returns total word size of all chunks in this manager.
-  size_t total_word_size() const;
 
-  // Returns total committed word size of all chunks in this manager.
-  size_t total_committed_word_size() const;
+// Contains statistics for a ChunkManager.
+class ChunkManagerStatistics {
+
+  FreeChunksStatistics _chunk_stats[NumberOfInUseLists];
+
+public:
+
+  // Free chunk statistics, by chunk index.
+  const FreeChunksStatistics& chunk_stats(ChunkIndex index) const   { return _chunk_stats[index]; }
+  FreeChunksStatistics& chunk_stats(ChunkIndex index)               { return _chunk_stats[index]; }
+
+  void reset();
+  size_t total_capacity() const;
 
   void print_on(outputStream* st, size_t scale) const;
 
-  DEBUG_ONLY(void verify() const;)
+}; // ChunkManagerStatistics
 
-};
+// Contains statistics for a number of chunks in use.
+// Each chunk has a used and free portion; however, there are current chunks (serving
+// potential future metaspace allocations) and non-current chunks. Unused portion of the
+// former is counted as free, unused portion of the latter counts as waste.
+class UsedChunksStatistics {
+  uintx _num;     // Number of chunks
+  size_t _cap;    // Total capacity in words.
+  size_t _used;   // Total used area, in words
+  size_t _free;   // Total free area (unused portions of current chunks), in words
+  size_t _waste;  // Total waste area (unused portions of non-current chunks), in words
+  size_t _overhead; // Total sum of chunk overheads, in words.
 
-// Contains statistics for one or multiple chunks in use.
-struct InUseChunkStats {
+public:
 
-  // Number of chunks
-  int _num;
+  UsedChunksStatistics();
 
-  // Note:
-  // capacity = committed + uncommitted
-  //            committed = used + free + waste
+  void reset();
 
-  // Capacity (total sum of all chunk sizes) in words.
-  // May contain committed and uncommitted space.
-  size_t _word_size;
+  uintx num() const { return _num; }
 
-  // Total committed area, in words.
-  size_t _committed_words;
+  // Total capacity, in words
+  size_t cap() const { return _cap; }
 
-  // Total used area, in words.
-  size_t _used_words;
+  // Total used area, in words
+  size_t used() const { return _used; }
 
-  // Total free committed area, in words.
-  size_t _free_words;
+  // Total free area (unused portions of current chunks), in words
+  size_t free() const { return _free; }
 
-  // Total waste committed area, in words.
-  size_t _waste_words;
+  // Total waste area (unused portions of non-current chunks), in words
+  size_t waste() const { return _waste; }
 
-  InUseChunkStats() :
-    _num(0),
-    _word_size(0),
-    _committed_words(0),
-    _used_words(0),
-    _free_words(0),
-    _waste_words(0)
-  {}
+  // Total area spent in overhead (chunk headers), in words
+  size_t overhead() const { return _overhead; }
 
-  void add(const InUseChunkStats& other) {
-    _num += other._num;
-    _word_size += other._word_size;
-    _committed_words += other._committed_words;
-    _used_words += other._used_words;
-    _free_words += other._free_words;
-    _waste_words += other._waste_words;
+  void add_num(uintx n) { _num += n; }
+  void add_cap(size_t s) { _cap += s; }
+  void add_used(size_t s) { _used += s; }
+  void add_free(size_t s) { _free += s; }
+  void add_waste(size_t s) { _waste += s; }
+  void add_overhead(size_t s) { _overhead += s; }
 
-  }
+  void add(const UsedChunksStatistics& other);
 
   void print_on(outputStream* st, size_t scale) const;
 
-  DEBUG_ONLY(void verify() const;)
+#ifdef ASSERT
+  void check_sanity() const;
+#endif
 
-};
+}; // UsedChunksStatistics
 
-// Class containing statistics for one or more MetaspaceArena objects.
-struct  ArenaStats {
+// Class containing statistics for one or more space managers.
+class SpaceManagerStatistics {
 
-  // chunk statistics by chunk level
-  InUseChunkStats _stats[chunklevel::NUM_CHUNK_LEVELS];
+  UsedChunksStatistics _chunk_stats[NumberOfInUseLists];
   uintx _free_blocks_num;
-  size_t _free_blocks_word_size;
+  size_t _free_blocks_cap_words;
 
-  ArenaStats() :
-    _stats(),
-    _free_blocks_num(0),
-    _free_blocks_word_size(0)
-  {}
+public:
 
-  void add(const ArenaStats& other);
+  SpaceManagerStatistics();
 
-  void print_on(outputStream* st, size_t scale = K,  bool detailed = true) const;
+  // Chunk statistics by chunk index
+  const UsedChunksStatistics& chunk_stats(ChunkIndex index) const   { return _chunk_stats[index]; }
+  UsedChunksStatistics& chunk_stats(ChunkIndex index)               { return _chunk_stats[index]; }
 
-  InUseChunkStats totals() const;
+  uintx free_blocks_num () const                                    { return _free_blocks_num; }
+  size_t free_blocks_cap_words () const                             { return _free_blocks_cap_words; }
 
-  DEBUG_ONLY(void verify() const;)
+  void reset();
 
-};
+  void add_free_blocks_info(uintx num, size_t cap);
 
-// Statistics for one or multiple ClassLoaderMetaspace objects
-struct ClmsStats {
+  // Returns total chunk statistics over all chunk types.
+  UsedChunksStatistics totals() const;
 
-  ArenaStats _arena_stats_nonclass;
-  ArenaStats _arena_stats_class;
+  void add(const SpaceManagerStatistics& other);
 
-  ClmsStats() : _arena_stats_nonclass(), _arena_stats_class() {}
+  void print_on(outputStream* st, size_t scale,  bool detailed) const;
 
-  void add(const ClmsStats& other) {
-    _arena_stats_nonclass.add(other._arena_stats_nonclass);
-    _arena_stats_class.add(other._arena_stats_class);
-  }
+}; // SpaceManagerStatistics
+
+class ClassLoaderMetaspaceStatistics {
+
+  SpaceManagerStatistics _sm_stats[Metaspace::MetadataTypeCount];
+
+public:
+
+  ClassLoaderMetaspaceStatistics();
+
+  const SpaceManagerStatistics& sm_stats(Metaspace::MetadataType mdType) const { return _sm_stats[mdType]; }
+  SpaceManagerStatistics& sm_stats(Metaspace::MetadataType mdType)             { return _sm_stats[mdType]; }
+
+  const SpaceManagerStatistics& nonclass_sm_stats() const { return sm_stats(Metaspace::NonClassType); }
+  SpaceManagerStatistics& nonclass_sm_stats()             { return sm_stats(Metaspace::NonClassType); }
+  const SpaceManagerStatistics& class_sm_stats() const    { return sm_stats(Metaspace::ClassType); }
+  SpaceManagerStatistics& class_sm_stats()                { return sm_stats(Metaspace::ClassType); }
+
+  void reset();
+
+  void add(const ClassLoaderMetaspaceStatistics& other);
+
+  // Returns total space manager statistics for both class and non-class metaspace
+  SpaceManagerStatistics totals() const;
 
   void print_on(outputStream* st, size_t scale, bool detailed) const;
 
-  // Returns total statistics for both class and non-class metaspace
-  ArenaStats totals() const;
-
-  DEBUG_ONLY(void verify() const;)
-
-};
+}; // ClassLoaderMetaspaceStatistics
 
 } // namespace metaspace
 
 #endif // SHARE_MEMORY_METASPACE_METASPACESTATISTICS_HPP
-

@@ -23,10 +23,6 @@
  * questions.
  */
 
-#ifdef HEADLESS
-    #error This file should not be included in headless library
-#endif
-
 #include "X11SurfaceData.h"
 #include <jni.h>
 #include <math.h>
@@ -253,6 +249,7 @@ JNIEXPORT jboolean JNICALL
 Java_sun_awt_X11GraphicsEnvironment_initXRender
 (JNIEnv *env, jclass x11ge, jboolean verbose, jboolean ignoreLinuxVersion)
 {
+#ifndef HEADLESS
     static jboolean xrenderAvailable = JNI_FALSE;
     static jboolean firstTime = JNI_TRUE;
 
@@ -270,6 +267,9 @@ Java_sun_awt_X11GraphicsEnvironment_initXRender
         firstTime = JNI_FALSE;
     }
     return xrenderAvailable;
+#else
+    return JNI_FALSE;
+#endif /* !HEADLESS */
 }
 
 

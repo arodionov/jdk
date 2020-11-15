@@ -183,7 +183,7 @@ Node* ArrayCopyNode::try_clone_instance(PhaseGVN *phase, bool can_reshape, int c
 
   const Type* src_type = phase->type(base_src);
 
-  MergeMemNode* mem = phase->transform(MergeMemNode::make(in_mem))->as_MergeMem();
+  MergeMemNode* mem = MergeMemNode::make(in_mem);
 
   const TypeInstPtr* inst_src = src_type->isa_instptr();
 
@@ -367,7 +367,7 @@ void ArrayCopyNode::array_copy_test_overlap(PhaseGVN *phase, bool can_reshape, b
 Node* ArrayCopyNode::array_copy_forward(PhaseGVN *phase,
                                         bool can_reshape,
                                         Node*& forward_ctl,
-                                        Node* mem,
+                                        MergeMemNode* mm,
                                         const TypePtr* atp_src,
                                         const TypePtr* atp_dest,
                                         Node* adr_src,
@@ -379,7 +379,7 @@ Node* ArrayCopyNode::array_copy_forward(PhaseGVN *phase,
                                         int count) {
   if (!forward_ctl->is_top()) {
     // copy forward
-    MergeMemNode* mm = MergeMemNode::make(mem);
+    mm = mm->clone()->as_MergeMem();
 
     if (count > 0) {
       BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
@@ -392,7 +392,7 @@ Node* ArrayCopyNode::array_copy_forward(PhaseGVN *phase,
         v = load(bs, phase, forward_ctl, mm, next_src, atp_src, value_type, copy_type);
         store(bs, phase, forward_ctl, mm, next_dest, atp_dest, v, value_type, copy_type);
       }
-    } else if (can_reshape) {
+    } else if(can_reshape) {
       PhaseIterGVN* igvn = phase->is_IterGVN();
       igvn->_worklist.push(adr_src);
       igvn->_worklist.push(adr_dest);
@@ -405,7 +405,7 @@ Node* ArrayCopyNode::array_copy_forward(PhaseGVN *phase,
 Node* ArrayCopyNode::array_copy_backward(PhaseGVN *phase,
                                          bool can_reshape,
                                          Node*& backward_ctl,
-                                         Node* mem,
+                                         MergeMemNode* mm,
                                          const TypePtr* atp_src,
                                          const TypePtr* atp_dest,
                                          Node* adr_src,
@@ -417,7 +417,7 @@ Node* ArrayCopyNode::array_copy_backward(PhaseGVN *phase,
                                          int count) {
   if (!backward_ctl->is_top()) {
     // copy backward
-    MergeMemNode* mm = MergeMemNode::make(mem);
+    mm = mm->clone()->as_MergeMem();
 
     BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
     assert(copy_type != T_OBJECT || !bs->array_copy_requires_gc_barriers(false, T_OBJECT, false, BarrierSetC2::Optimization), "only tightly coupled allocations for object arrays");
@@ -432,7 +432,7 @@ Node* ArrayCopyNode::array_copy_backward(PhaseGVN *phase,
       }
       Node* v = load(bs, phase, backward_ctl, mm, adr_src, atp_src, value_type, copy_type);
       store(bs, phase, backward_ctl, mm, adr_dest, atp_dest, v, value_type, copy_type);
-    } else if (can_reshape) {
+    } else if(can_reshape) {
       PhaseIterGVN* igvn = phase->is_IterGVN();
       igvn->_worklist.push(adr_src);
       igvn->_worklist.push(adr_dest);
@@ -564,7 +564,11 @@ Node *ArrayCopyNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   Node* dest = in(ArrayCopyNode::Dest);
   const TypePtr* atp_src = get_address_type(phase, _src_type, src);
   const TypePtr* atp_dest = get_address_type(phase, _dest_type, dest);
-  Node* in_mem = in(TypeFunc::Memory);
+
+  Node *in_mem = in(TypeFunc::Memory);
+  if (!in_mem->is_MergeMem()) {
+    in_mem = MergeMemNode::make(in_mem);
+  }
 
   if (can_reshape) {
     assert(!phase->is_IterGVN()->delay_transform(), "cannot delay transforms");
@@ -576,13 +580,13 @@ Node *ArrayCopyNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   array_copy_test_overlap(phase, can_reshape, disjoint_bases, count, forward_ctl, backward_ctl);
 
   Node* forward_mem = array_copy_forward(phase, can_reshape, forward_ctl,
-                                         in_mem,
+                                         in_mem->as_MergeMem(),
                                          atp_src, atp_dest,
                                          adr_src, base_src, adr_dest, base_dest,
                                          copy_type, value_type, count);
 
   Node* backward_mem = array_copy_backward(phase, can_reshape, backward_ctl,
-                                           in_mem,
+                                           in_mem->as_MergeMem(),
                                            atp_src, atp_dest,
                                            adr_src, base_src, adr_dest, base_dest,
                                            copy_type, value_type, count);

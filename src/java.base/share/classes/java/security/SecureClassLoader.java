@@ -108,6 +108,7 @@ public class SecureClassLoader extends ClassLoader {
      *         doesn't allow creation of a class loader.
      *
      * @since 9
+     * @spec JPMS
      */
     protected SecureClassLoader(String name, ClassLoader parent) {
         super(name, parent);

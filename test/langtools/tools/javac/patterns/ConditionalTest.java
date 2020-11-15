@@ -85,7 +85,10 @@ public class ConditionalTest extends ComboInstance<ConditionalTest> {
                         case "TRUE" -> trueSec;
                         case "FALSE" -> falseSec;
                         default -> throw new UnsupportedOperationException(pname);
-                    });
+                    })
+                .withOption("--enable-preview")
+                .withOption("-source")
+                .withOption(String.valueOf(Runtime.version().feature()));
 
         task.analyze(result -> {
             boolean shouldPass;

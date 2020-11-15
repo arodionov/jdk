@@ -34,14 +34,12 @@ public class HttpPrincipal implements Principal {
     private String username, realm;
 
     /**
-     * Creates a {@code HttpPrincipal} from the given {@code username} and
-     * {@code realm}.
-     *
-     * @param username the name of the user within the realm
-     * @param realm the realm for this user
-     * @throws NullPointerException if either username or realm are {@code null}
+     * creates a HttpPrincipal from the given username and realm
+     * @param username The name of the user within the realm
+     * @param realm The realm.
+     * @throws NullPointerException if either username or realm are null
      */
-    public HttpPrincipal(String username, String realm) {
+    public HttpPrincipal (String username, String realm) {
         if (username == null || realm == null) {
             throw new NullPointerException();
         }
@@ -50,16 +48,12 @@ public class HttpPrincipal implements Principal {
     }
 
     /**
-     * Compare two instances of {@code HttpPrincipal}. Returns {@code true} if
-     * <i>another</i> is an instance of {@code HttpPrincipal}, and its username
-     * and realm are equal to this object's username and realm. Returns {@code false}
-     * otherwise.
-     *
-     * @param another the object to compare this instance of {@code HttpPrincipal} against
-     * @return {@code true} or {@code false} depending on whether objects are
-     * equal or not
+     * Compares two HttpPrincipal. Returns <code>true</code>
+     * if <i>another</i> is an instance of HttpPrincipal, and its
+     * username and realm are equal to this object's username
+     * and realm. Returns <code>false</code> otherwise.
      */
-    public boolean equals(Object another) {
+    public boolean equals (Object another) {
         if (!(another instanceof HttpPrincipal)) {
             return false;
         }
@@ -69,47 +63,41 @@ public class HttpPrincipal implements Principal {
     }
 
     /**
-     * Returns the contents of this principal in the form
-     * <i>realm:username</i>.
-     *
-     * @return the contents of this principal in the form realm:username
+     * returns the contents of this principal in the form
+     * <i>realm:username</i>
      */
     public String getName() {
-        return String.format("%s:%s", realm, username);
+        return username;
     }
 
     /**
-     * Returns the {@code username} this object was created with.
+     * returns the username this object was created with.
      *
-     * @return the name of the user associated with this object
+     * @return The name of the user assoicated with this object
      */
     public String getUsername() {
         return username;
     }
 
     /**
-     * Returns the {@code realm} this object was created with.
+     * returns the realm this object was created with.
      *
-     * @return the realm associated with this object
+     * @return The realm associated with this object
      */
     public String getRealm() {
         return realm;
     }
 
     /**
-     * Returns a hashcode for this {@code HttpPrincipal}. This is calculated
-     * as {@code (getUsername()+getRealm()).hashCode()}.
-     *
-     * @return the hashcode for this object
+     * returns a hashcode for this HttpPrincipal. This is calculated
+     * as <code>(getUsername()+getRealm().hashCode()</code>
      */
     public int hashCode() {
         return (username+realm).hashCode();
     }
 
     /**
-     * Returns the same string as {@link #getName()}.
-     *
-     * @return the name associated with this object
+     * returns the same string as getName()
      */
     public String toString() {
         return getName();

@@ -33,10 +33,6 @@ import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.nio.channels.spi.AbstractSelector;
 import java.nio.channels.spi.SelectorProvider;
-import java.util.Objects;
-import static java.net.StandardProtocolFamily.INET;
-import static java.net.StandardProtocolFamily.INET6;
-import static java.net.StandardProtocolFamily.UNIX;
 
 public abstract class SelectorProviderImpl
     extends SelectorProvider
@@ -79,29 +75,11 @@ public abstract class SelectorProviderImpl
 
     @Override
     public SocketChannel openSocketChannel(ProtocolFamily family) throws IOException {
-        Objects.requireNonNull(family, "'family' is null");
-        if (family == INET6 && !Net.isIPv6Available()) {
-            throw new UnsupportedOperationException("IPv6 not available");
-        } else if (family == INET || family == INET6) {
-            return new SocketChannelImpl(this, family);
-        } else if (family == UNIX && UnixDomainSockets.isSupported()) {
-            return new SocketChannelImpl(this, family);
-        } else {
-            throw new UnsupportedOperationException("Protocol family not supported");
-        }
+        return new SocketChannelImpl(this, family);
     }
 
     @Override
-    public ServerSocketChannel openServerSocketChannel(ProtocolFamily family) throws IOException {
-        Objects.requireNonNull(family, "'family' is null");
-        if (family == INET6 && !Net.isIPv6Available()) {
-            throw new UnsupportedOperationException("IPv6 not available");
-        } else if (family == INET || family == INET6)  {
-            return new ServerSocketChannelImpl(this, family);
-        } else if (family == UNIX && UnixDomainSockets.isSupported()) {
-            return new ServerSocketChannelImpl(this, family);
-        } else {
-            throw new UnsupportedOperationException("Protocol family not supported");
-        }
+    public ServerSocketChannel openServerSocketChannel(ProtocolFamily family) {
+        return new ServerSocketChannelImpl(this, family);
     }
 }

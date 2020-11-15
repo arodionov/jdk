@@ -345,11 +345,11 @@ public:
   // Vector ideal reg
   static const uint vector_ideal_reg(int len);
 
-  // Does the CPU supports vector variable shift instructions?
-  static bool supports_vector_variable_shifts(void);
-
   // CPU supports misaligned vectors store/load.
   static const bool misaligned_vectors_ok();
+
+  // Should original key array reference be passed to AES stubs
+  static const bool pass_original_key_for_aes();
 
   // Used to determine a "low complexity" 64-bit constant.  (Zero is simple.)
   // The standard of comparison is one (StoreL ConL) vs. two (StoreI ConI).
@@ -414,6 +414,13 @@ public:
 
   // The Method-klass-holder may be passed in the inline_cache_reg
   // and then expanded into the inline_cache_reg and a method_ptr register
+
+  static OptoReg::Name  interpreter_method_reg();
+  static int            interpreter_method_reg_encode();
+
+  static OptoReg::Name  compiler_method_reg();
+  static const RegMask &compiler_method_reg_mask();
+  static int            compiler_method_reg_encode();
 
   // Interpreter's Frame Pointer Register
   static OptoReg::Name  interpreter_frame_pointer_reg();
@@ -525,6 +532,10 @@ public:
   DEBUG_ONLY( bool verify_after_postselect_cleanup(); )
 
  public:
+  // Perform a platform dependent implicit null fixup.  This is needed
+  // on windows95 to take care of some unusual register constraints.
+  void pd_implicit_null_fixup(MachNode *load, uint idx);
+
   // Advertise here if the CPU requires explicit rounding operations to implement strictfp mode.
   static const bool strict_fp_requires_explicit_rounding;
 

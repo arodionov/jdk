@@ -76,7 +76,7 @@ void InterpreterCodelet::print_on(outputStream* st) const {
 
   if (PrintInterpreter) {
     st->cr();
-    Disassembler::decode(code_begin(), code_end(), st DEBUG_ONLY(COMMA &_strings));
+    Disassembler::decode(code_begin(), code_end(), st, DEBUG_ONLY(_strings) NOT_DEBUG(CodeStrings()));
   }
 }
 
@@ -106,8 +106,7 @@ CodeletMark::~CodeletMark() {
   // Commit Codelet.
   int committed_code_size = (*_masm)->code()->pure_insts_size();
   if (committed_code_size) {
-    CodeStrings cs NOT_PRODUCT(= (*_masm)->code()->strings());
-    AbstractInterpreter::code()->commit(committed_code_size, cs);
+    AbstractInterpreter::code()->commit(committed_code_size, (*_masm)->code()->strings());
   }
   // Make sure nobody can use _masm outside a CodeletMark lifespan.
   *_masm = NULL;

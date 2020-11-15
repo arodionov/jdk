@@ -23,7 +23,6 @@
 
 /*
  * @test PlainRead
- * @key cgroups
  * @requires os.family == "linux"
  * @library /testlibrary /test/lib
  * @build sun.hotspot.WhiteBox

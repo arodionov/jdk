@@ -96,6 +96,7 @@ import java.util.Collections;
  * </blockquote>
  * Additional (implementation specific) options may also be supported.
  *
+ * @author  unascribed
  * @see     java.net.Socket#setSocketImplFactory(java.net.SocketImplFactory)
  * @see     java.net.SocketImpl
  * @see     java.nio.channels.SocketChannel
@@ -590,6 +591,7 @@ public class Socket implements java.io.Closeable {
      * @throws  IllegalArgumentException if endpoint is null or is a
      *          SocketAddress subclass not supported by this socket
      * @since 1.4
+     * @spec JSR-51
      */
     public void connect(SocketAddress endpoint) throws IOException {
         connect(endpoint, 0);
@@ -611,6 +613,7 @@ public class Socket implements java.io.Closeable {
      *          SocketAddress subclass not supported by this socket, or
      *          if {@code timeout} is negative
      * @since 1.4
+     * @spec JSR-51
      */
     public void connect(SocketAddress endpoint, int timeout) throws IOException {
         if (endpoint == null)
@@ -883,6 +886,7 @@ public class Socket implements java.io.Closeable {
      *          for a channel
      *
      * @since 1.4
+     * @spec JSR-51
      */
     public SocketChannel getChannel() {
         return null;
@@ -931,6 +935,7 @@ public class Socket implements java.io.Closeable {
      *             using {@link #shutdownInput()}
      *
      * @revised 1.4
+     * @spec JSR-51
      */
     public InputStream getInputStream() throws IOException {
         if (isClosed())
@@ -1002,6 +1007,7 @@ public class Socket implements java.io.Closeable {
      * @throws     IOException  if an I/O error occurs when creating the
      *               output stream or if the socket is not connected.
      * @revised 1.4
+     * @spec JSR-51
      */
     public OutputStream getOutputStream() throws IOException {
         if (isClosed())
@@ -1575,6 +1581,7 @@ public class Socket implements java.io.Closeable {
      *
      * @throws     IOException  if an I/O error occurs when closing this socket.
      * @revised 1.4
+     * @spec JSR-51
      * @see #isClosed
      */
     public synchronized void close() throws IOException {

@@ -227,6 +227,7 @@ import sun.security.util.SecurityConstants;
  * @see      #resolveClass(Class)
  * @since 1.0
  * @revised 9
+ * @spec JPMS
  */
 public abstract class ClassLoader {
 
@@ -424,6 +425,7 @@ public abstract class ClassLoader {
      *         method doesn't allow creation of a new class loader.
      *
      * @since  9
+     * @spec JPMS
      */
     protected ClassLoader(String name, ClassLoader parent) {
         this(checkCreateClassLoader(name), name, parent);
@@ -486,6 +488,7 @@ public abstract class ClassLoader {
      * this class loader is not named.
      *
      * @since 9
+     * @spec JPMS
      */
     public String getName() {
         return name;
@@ -740,6 +743,7 @@ public abstract class ClassLoader {
      *         if the class could not be found.
      *
      * @since 9
+     * @spec JPMS
      */
     protected Class<?> findClass(String moduleName, String name) {
         if (moduleName == null) {
@@ -865,6 +869,7 @@ public abstract class ClassLoader {
      *
      * @since  1.1
      * @revised 9
+     * @spec JPMS
      */
     protected final Class<?> defineClass(String name, byte[] b, int off, int len)
         throws ClassFormatError
@@ -1000,6 +1005,7 @@ public abstract class ClassLoader {
      *          class loader or its ancestor.
      *
      * @revised 9
+     * @spec JPMS
      */
     protected final Class<?> defineClass(String name, byte[] b, int off, int len,
                                          ProtectionDomain protectionDomain)
@@ -1075,6 +1081,7 @@ public abstract class ClassLoader {
      *
      * @since  1.5
      * @revised 9
+     * @spec JPMS
      */
     protected final Class<?> defineClass(String name, java.nio.ByteBuffer b,
                                          ProtectionDomain protectionDomain)
@@ -1337,6 +1344,7 @@ public abstract class ClassLoader {
      *
      * @see java.lang.module.ModuleReader#find(String)
      * @since 9
+     * @spec JPMS
      */
     protected URL findResource(String moduleName, String name) throws IOException {
         if (moduleName == null) {
@@ -1388,6 +1396,7 @@ public abstract class ClassLoader {
      *
      * @since  1.1
      * @revised 9
+     * @spec JPMS
      */
     public URL getResource(String name) {
         Objects.requireNonNull(name);
@@ -1453,6 +1462,7 @@ public abstract class ClassLoader {
      *
      * @since  1.2
      * @revised 9
+     * @spec JPMS
      */
     public Enumeration<URL> getResources(String name) throws IOException {
         Objects.requireNonNull(name);
@@ -1551,6 +1561,7 @@ public abstract class ClassLoader {
      *
      * @since  1.2
      * @revised 9
+     * @spec JPMS
      */
     protected URL findResource(String name) {
         return null;
@@ -1586,6 +1597,7 @@ public abstract class ClassLoader {
      *
      * @since  1.2
      * @revised 9
+     * @spec JPMS
      */
     protected Enumeration<URL> findResources(String name) throws IOException {
         return Collections.emptyEnumeration();
@@ -1657,6 +1669,7 @@ public abstract class ClassLoader {
      *
      * @since  1.1
      * @revised 9
+     * @spec JPMS
      */
     public static URL getSystemResource(String name) {
         return getSystemClassLoader().getResource(name);
@@ -1693,6 +1706,7 @@ public abstract class ClassLoader {
      *
      * @since  1.2
      * @revised 9
+     * @spec JPMS
      */
     public static Enumeration<URL> getSystemResources(String name)
         throws IOException
@@ -1725,6 +1739,7 @@ public abstract class ClassLoader {
      *
      * @since  1.1
      * @revised 9
+     * @spec JPMS
      */
     public InputStream getResourceAsStream(String name) {
         Objects.requireNonNull(name);
@@ -1758,6 +1773,7 @@ public abstract class ClassLoader {
      *
      * @since  1.1
      * @revised 9
+     * @spec JPMS
      */
     public static InputStream getSystemResourceAsStream(String name) {
         URL url = getSystemResource(name);
@@ -1808,6 +1824,7 @@ public abstract class ClassLoader {
      *
      * @see Module#isNamed()
      * @since 9
+     * @spec JPMS
      */
     public final Module getUnnamedModule() {
         return unnamedModule;
@@ -1831,6 +1848,7 @@ public abstract class ClassLoader {
      *          {@link RuntimePermission}{@code ("getClassLoader")}
      *
      * @since 9
+     * @spec JPMS
      */
     @CallerSensitive
     public static ClassLoader getPlatformClassLoader() {
@@ -1918,6 +1936,7 @@ public abstract class ClassLoader {
      *
      * @revised  1.4
      * @revised 9
+     * @spec JPMS
      */
     @CallerSensitive
     public static ClassLoader getSystemClassLoader() {
@@ -2183,6 +2202,7 @@ public abstract class ClassLoader {
      *
      * @since  1.2
      * @revised 9
+     * @spec JPMS
      *
      * @jvms 5.3 Creation and Loading
      * @see <a href="{@docRoot}/../specs/jar/jar.html#package-sealing">
@@ -2221,6 +2241,7 @@ public abstract class ClassLoader {
      * @jvms 5.3 Creation and Loading
      *
      * @since  9
+     * @spec JPMS
      */
     public final Package getDefinedPackage(String name) {
         Objects.requireNonNull(name, "name cannot be null");
@@ -2247,6 +2268,7 @@ public abstract class ClassLoader {
      * @jvms 5.3 Creation and Loading
      *
      * @since  9
+     * @spec JPMS
      */
     public final Package[] getDefinedPackages() {
         return packages().toArray(Package[]::new);
@@ -2292,6 +2314,7 @@ public abstract class ClassLoader {
      *
      * @since  1.2
      * @revised 9
+     * @spec JPMS
      */
     @Deprecated(since="9")
     protected Package getPackage(String name) {
@@ -2327,6 +2350,7 @@ public abstract class ClassLoader {
      *
      * @since  1.2
      * @revised 9
+     * @spec JPMS
      */
     protected Package[] getPackages() {
         Stream<Package> pkgs = packages();

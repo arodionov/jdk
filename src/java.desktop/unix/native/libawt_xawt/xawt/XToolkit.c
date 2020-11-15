@@ -23,10 +23,6 @@
  * questions.
  */
 
-#ifdef HEADLESS
-    #error This file should not be included in headless library
-#endif
-
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <X11/Xos.h>
@@ -74,9 +70,12 @@ struct ComponentIDs componentIDs;
 
 struct MenuComponentIDs menuComponentIDs;
 
+#ifndef HEADLESS
+
 extern Display* awt_init_Display(JNIEnv *env, jobject this);
 extern void freeNativeStringArray(char **array, jsize length);
 extern char** stringArrayToNative(JNIEnv *env, jobjectArray array, jsize * ret_length);
+#endif /* !HEADLESS */
 
 /* This function gets called from the static initializer for FileDialog.java
    to initialize the fieldIDs for fields that may be accessed from C */
@@ -303,7 +302,11 @@ Java_java_awt_TextField_initIDs
 #ifndef STATIC_BUILD
 // The same function exists in libawt.a::awt_LoadLibrary.c
 JNIEXPORT jboolean JNICALL AWTIsHeadless() {
+#ifdef HEADLESS
+    return JNI_TRUE;
+#else
     return JNI_FALSE;
+#endif
 }
 #endif
 

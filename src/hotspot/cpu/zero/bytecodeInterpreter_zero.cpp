@@ -47,6 +47,7 @@ const char *BytecodeInterpreter::name_of_field_at_address(address addr) {
   DO(_constants);
   DO(_method);
   DO(_mirror);
+  DO(_mdx);
   DO(_stack);
   DO(_msg);
   DO(_result);
@@ -83,6 +84,7 @@ void BytecodeInterpreter::layout_interpreterState(interpreterState istate,
   istate->set_msg(BytecodeInterpreter::method_resume);
   istate->set_bcp_advance(0);
   istate->set_oop_temp(NULL);
+  istate->set_mdx(NULL);
   if (caller->is_interpreted_frame()) {
     interpreterState prev = caller->get_interpreterState();
     prev->set_callee(method);

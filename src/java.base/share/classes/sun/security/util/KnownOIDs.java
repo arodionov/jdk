@@ -148,8 +148,6 @@ public enum KnownOIDs {
     HmacSHA3_256("2.16.840.1.101.3.4.2.14", "HmacSHA3-256"),
     HmacSHA3_384("2.16.840.1.101.3.4.2.15", "HmacSHA3-384"),
     HmacSHA3_512("2.16.840.1.101.3.4.2.16", "HmacSHA3-512"),
-    SHAKE128_LEN("2.16.840.1.101.3.4.2.17", "SHAKE128-LEN"),
-    SHAKE256_LEN("2.16.840.1.101.3.4.2.18", "SHAKE256-LEN"),
 
     // sigAlgs 2.16.840.1.101.3.4.3.*
     SHA224withDSA("2.16.840.1.101.3.4.3.1"),
@@ -183,7 +181,7 @@ public enum KnownOIDs {
     OAEP("1.2.840.113549.1.1.7"),
     MGF1("1.2.840.113549.1.1.8"),
     PSpecified("1.2.840.113549.1.1.9"),
-    RSASSA_PSS("1.2.840.113549.1.1.10", "RSASSA-PSS", "PSS"),
+    RSASSA_PSS("1.2.840.113549.1.1.10", "RSASSA-PSS"),
     SHA256withRSA("1.2.840.113549.1.1.11"),
     SHA384withRSA("1.2.840.113549.1.1.12"),
     SHA512withRSA("1.2.840.113549.1.1.13"),
@@ -233,7 +231,6 @@ public enum KnownOIDs {
     FriendlyName("1.2.840.113549.1.9.20"),
     LocalKeyID("1.2.840.113549.1.9.21"),
     CertTypeX509("1.2.840.113549.1.9.22.1"),
-    CMSAlgorithmProtection("1.2.840.113549.1.9.52"),
 
     // PKCS12 1.2.840.113549.1.12.*
     PBEWithSHA1AndRC4_128("1.2.840.113549.1.12.1.1"),
@@ -354,7 +351,7 @@ public enum KnownOIDs {
     ECDH("1.3.132.1.12"),
 
     // OIW secsig 1.3.14.3.*
-    OIW_DES_CBC("1.3.14.3.2.7", "DES/CBC", "DES"),
+    OIW_DES_CBC("1.3.14.3.2.7", "DES/CBC"),
 
     OIW_DSA("1.3.14.3.2.12", "DSA") {
         @Override
@@ -370,8 +367,6 @@ public enum KnownOIDs {
         @Override
         boolean registerNames() { return false; }
     },
-
-    DESede("1.3.14.3.2.17", "DESede"),
 
     SHA_1("1.3.14.3.2.26", "SHA-1", "SHA", "SHA1"),
 

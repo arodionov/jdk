@@ -39,7 +39,6 @@ import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 
 import static com.sun.tools.javac.code.Flags.*;
 import static com.sun.tools.javac.code.Kinds.Kind.*;
-import com.sun.tools.javac.code.Symbol.VarSymbol;
 import static com.sun.tools.javac.code.TypeTag.BOT;
 import static com.sun.tools.javac.tree.JCTree.Tag.*;
 import static com.sun.tools.javac.tree.JCTree.Tag.BLOCK;
@@ -536,7 +535,7 @@ public class TreeInfo {
             }
             case BINDINGPATTERN: {
                 JCBindingPattern node = (JCBindingPattern)tree;
-                return getStartPos(node.var);
+                return getStartPos(node.vartype);
             }
             case ERRONEOUS: {
                 JCErroneous node = (JCErroneous)tree;
@@ -927,6 +926,8 @@ public class TreeInfo {
             if (node.type != null)
                 return node.type.tsym;
             return null;
+        case BINDINGPATTERN:
+            return ((JCBindingPattern) node).symbol;
         default:
             return null;
         }

@@ -35,7 +35,7 @@ TEST(ZArray, sanity) {
 
   ZArray<int> b;
 
-  b.swap(&a);
+  b.transfer(&a);
 
   // Check size
   ASSERT_EQ(a.length(), 0);

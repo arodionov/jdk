@@ -30,6 +30,7 @@ package java.lang;
  *
  * @see ModuleLayer
  * @since 9
+ * @spec JPMS
  */
 public class LayerInstantiationException extends RuntimeException {
     @java.io.Serial

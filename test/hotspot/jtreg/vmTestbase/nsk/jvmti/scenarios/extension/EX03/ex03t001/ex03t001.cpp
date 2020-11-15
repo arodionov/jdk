@@ -41,15 +41,7 @@ static jrawMonitorID eventMon;
 /* ============================================================================= */
 
 static void JNICALL
-ClassUnload(jvmtiEnv* jvmti_env, ...) {
-    JNIEnv *jni_env = NULL;
-    va_list ap;
-
-    va_start(ap, jvmti_env);
-    jni_env = va_arg(ap, JNIEnv *);
-    const char * name = va_arg(ap, const char *);
-    va_end(ap);
-
+ClassUnload(jvmtiEnv* jvmti_env, JNIEnv* jni_env, const char* name, ...) {
     // The name argument should never be null
     if (name == NULL) {
         nsk_jvmti_setFailStatus();

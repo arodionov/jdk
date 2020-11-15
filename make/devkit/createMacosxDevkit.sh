@@ -91,6 +91,7 @@ EXCLUDE_DIRS=" \
     Platforms/AppleTVSimulator.platform \
     Platforms/iPhoneSimulator.platform \
     Platforms/WatchSimulator.platform \
+    Contents/SharedFrameworks/LLDB.framework \
     Contents/SharedFrameworks/ModelIO.framework \
     Contents/SharedFrameworks/XCSUI.framework \
     Contents/SharedFrameworks/SceneKit.framework \

@@ -110,8 +110,7 @@ class APITest {
     }
 
     protected JavaFileObject createSimpleJavaFileObject() {
-        return createSimpleJavaFileObject("pkg/C",
-                "package pkg; public class C { @Deprecated public static final int ZERO = 0; }");
+        return createSimpleJavaFileObject("pkg/C", "package pkg; public class C { }");
     }
 
     protected JavaFileObject createSimpleJavaFileObject(final String binaryName, final String content) {

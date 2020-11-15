@@ -44,10 +44,9 @@ public class bug4458079 extends JFrame implements PopupMenuListener {
     static volatile boolean itemASelected = false;
     public static void main(String[] args) throws Exception {
         Robot robot = new Robot();
-        robot.setAutoDelay(100);
+        robot.waitForIdle();
         // move mouse outside menu to prevent auto selection
         robot.mouseMove(100,100);
-        robot.waitForIdle();
 
         SwingUtilities.invokeAndWait(new Runnable() {
             public void run() {
@@ -55,16 +54,18 @@ public class bug4458079 extends JFrame implements PopupMenuListener {
             }
         });
 
-        robot.waitForIdle();
-        robot.delay(1000);
+        robot.setAutoDelay(50);
+
         Util.hitMnemonics(robot, KeyEvent.VK_M);
 
         robot.waitForIdle();
+        Thread.sleep(1000);
 
         Util.hitKeys(robot, KeyEvent.VK_DOWN);
         Util.hitKeys(robot, KeyEvent.VK_ENTER);
 
         robot.waitForIdle();
+        Thread.sleep(1000);
 
         if (!itemASelected) {
             throw new RuntimeException("Test failed: arrow key traversal in JMenu broken!");

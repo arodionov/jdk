@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,10 +24,7 @@
 import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Dimension;
-import java.awt.GraphicsDevice;
-import java.awt.GraphicsEnvironment;
 import java.awt.Point;
-import java.awt.Rectangle;
 import java.awt.Robot;
 import java.awt.event.InputEvent;
 import javax.swing.JFrame;
@@ -38,15 +35,13 @@ import javax.swing.SwingUtilities;
 /**
  * @test
  * @key headful
- * @bug 8149849 8211999
+ * @bug 8149849
  * @summary [hidpi] DnD issues (cannot DnD from JFileChooser to JEditorPane or
  *          other text component) when scale > 1
- * @run main/othervm DNDTextToScaledArea
  * @run main/othervm -Dsun.java2d.uiScale=2 DNDTextToScaledArea
  */
 public class DNDTextToScaledArea {
 
-    private static final int SIZE = 300;
     private static final String TEXT = "ABCDEFGH";
     private static JFrame frame;
     private static JTextArea srcTextArea;
@@ -56,28 +51,16 @@ public class DNDTextToScaledArea {
     private static volatile boolean passed = false;
 
     public static void main(String[] args) throws Exception {
-        var lge = GraphicsEnvironment.getLocalGraphicsEnvironment();
-        for (GraphicsDevice device : lge.getScreenDevices()) {
-            test(device);
-        }
-    }
-
-    private static void test(GraphicsDevice device) throws Exception {
         Robot robot = new Robot();
-        robot.setAutoDelay(150);
+        robot.setAutoDelay(50);
 
-        SwingUtilities.invokeAndWait(() -> createAndShowGUI(device));
+        SwingUtilities.invokeAndWait(DNDTextToScaledArea::createAndShowGUI);
         robot.waitForIdle();
 
         SwingUtilities.invokeAndWait(() -> {
             srcPoint = getPoint(srcTextArea, 0.1);
             dstPoint = getPoint(dstTextArea, 0.75);
         });
-        robot.waitForIdle();
-        // check the destination
-        robot.mouseMove(dstPoint.x, dstPoint.y);
-        robot.mousePress(InputEvent.BUTTON1_MASK);
-        robot.mouseRelease(InputEvent.BUTTON1_MASK);
         robot.waitForIdle();
 
         dragAndDrop(robot, srcPoint, dstPoint);
@@ -94,12 +77,11 @@ public class DNDTextToScaledArea {
         }
     }
 
-    private static void createAndShowGUI(GraphicsDevice device) {
-        frame = new JFrame(device.getDefaultConfiguration());
-        Rectangle screen = device.getDefaultConfiguration().getBounds();
-        int x = (int) (screen.getCenterX() - SIZE / 2);
-        int y = (int) (screen.getCenterY() - SIZE / 2);
-        frame.setBounds(x, y, SIZE, SIZE);
+    private static void createAndShowGUI() {
+
+        frame = new JFrame();
+        frame.setSize(300, 300);
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
         JPanel panel = new JPanel(new BorderLayout());
 

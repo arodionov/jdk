@@ -110,7 +110,7 @@ public abstract class AbstractDoclet implements Doclet {
 
         try {
             try {
-                startGeneration();
+                startGeneration(docEnv);
                 return true;
             } catch (UncheckedDocletException e) {
                 throw (DocletException) e.getCause();
@@ -187,7 +187,7 @@ public abstract class AbstractDoclet implements Doclet {
      *
      * @throws DocletException if there is a problem while generating the documentation
      */
-    private void startGeneration() throws DocletException {
+    private void startGeneration(DocletEnvironment docEnv) throws DocletException {
 
         // Modules with no documented classes may be specified on the
         // command line to specify a service provider, allow these.
@@ -203,23 +203,25 @@ public abstract class AbstractDoclet implements Doclet {
             configuration.getDocletVersion());
         ClassTree classtree = new ClassTree(configuration, configuration.getOptions().noDeprecated());
 
-        generateClassFiles(classtree);
+        generateClassFiles(docEnv, classtree);
 
         ElementListWriter.generate(configuration);
         generatePackageFiles(classtree);
         generateModuleFiles();
 
-        generateOtherFiles(classtree);
+        generateOtherFiles(docEnv, classtree);
         configuration.tagletManager.printReport();
     }
 
     /**
      * Generate additional documentation that is added to the API documentation.
      *
+     * @param docEnv     the DocletEnvironment
      * @param classtree the data structure representing the class tree
      * @throws DocletException if there is a problem while generating the documentation
      */
-    protected void generateOtherFiles(ClassTree classtree) throws DocletException {
+    protected void generateOtherFiles(DocletEnvironment docEnv, ClassTree classtree)
+            throws DocletException {
         BuilderFactory builderFactory = configuration.getBuilderFactory();
         AbstractBuilder constantsSummaryBuilder = builderFactory.getConstantsSummaryBuilder();
         constantsSummaryBuilder.build();
@@ -256,22 +258,31 @@ public abstract class AbstractDoclet implements Doclet {
     /**
      * Iterate through all classes and construct documentation for them.
      *
+     * @param docEnv      the DocletEnvironment
      * @param classtree the data structure representing the class tree
      * @throws DocletException if there is a problem while generating the documentation
      */
-    protected void generateClassFiles(ClassTree classtree)
+    protected void generateClassFiles(DocletEnvironment docEnv, ClassTree classtree)
             throws DocletException {
-        // handle classes specified as files on the command line
-        for (PackageElement pkg : configuration.typeElementCatalog.packages()) {
-            generateClassFiles(configuration.typeElementCatalog.allClasses(pkg), classtree);
-        }
-
-        // handle classes specified in m odules and packages on the command line
+        generateClassFiles(classtree);
         SortedSet<PackageElement> packages = new TreeSet<>(utils.comparators.makePackageComparator());
         packages.addAll(configuration.getSpecifiedPackageElements());
         configuration.modulePackages.values().stream().forEach(packages::addAll);
         for (PackageElement pkg : packages) {
             generateClassFiles(utils.getAllClasses(pkg), classtree);
+        }
+    }
+
+    /**
+     * Generate the class files for single classes specified on the command line.
+     *
+     * @param classtree the data structure representing the class tree
+     * @throws DocletException if there is a problem while generating the documentation
+     */
+    private void generateClassFiles(ClassTree classtree) throws DocletException {
+        SortedSet<PackageElement> packages = configuration.typeElementCatalog.packages();
+        for (PackageElement pkg : packages) {
+            generateClassFiles(configuration.typeElementCatalog.allClasses(pkg), classtree);
         }
     }
 }

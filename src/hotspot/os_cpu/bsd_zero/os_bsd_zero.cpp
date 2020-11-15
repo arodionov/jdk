@@ -115,14 +115,53 @@ frame os::fetch_frame_from_context(const void* ucVoid) {
   return frame();
 }
 
-bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
-                                             ucontext_t* uc, JavaThread* thread) {
+extern "C" JNIEXPORT int
+JVM_handle_bsd_signal(int sig,
+                        siginfo_t* info,
+                        void* ucVoid,
+                        int abort_if_unrecognized) {
+  ucontext_t* uc = (ucontext_t*) ucVoid;
 
-  // handle SafeFetch faults the zero way
+  Thread* t = Thread::current_or_null_safe();
+
+  SignalHandlerMark shm(t);
+
+  // handle SafeFetch faults
   if (sig == SIGSEGV || sig == SIGBUS) {
     sigjmp_buf* const pjb = get_jmp_buf_for_continuation();
     if (pjb) {
       siglongjmp(*pjb, 1);
+    }
+  }
+
+  // Note: it's not uncommon that JNI code uses signal/sigset to
+  // install then restore certain signal handler (e.g. to temporarily
+  // block SIGPIPE, or have a SIGILL handler when detecting CPU
+  // type). When that happens, JVM_handle_bsd_signal() might be
+  // invoked with junk info/ucVoid. To avoid unnecessary crash when
+  // libjsig is not preloaded, try handle signals that do not require
+  // siginfo/ucontext first.
+
+  if (sig == SIGPIPE || sig == SIGXFSZ) {
+    // allow chained handler to go first
+    if (PosixSignals::chained_handler(sig, info, ucVoid)) {
+      return true;
+    } else {
+      // Ignoring SIGPIPE/SIGXFSZ - see bugs 4229104 or 6499219
+      return true;
+    }
+  }
+
+  JavaThread* thread = NULL;
+  VMThread* vmthread = NULL;
+  if (PosixSignals::are_signal_handlers_installed()) {
+    if (t != NULL ){
+      if(t->is_Java_thread()) {
+        thread = t->as_Java_thread();
+      }
+      else if(t->is_VM_thread()){
+        vmthread = (VMThread *)t;
+      }
     }
   }
 
@@ -133,14 +172,13 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
 
       // check if fault address is within thread stack
       if (thread->is_in_full_stack(addr)) {
-        StackOverflow* overflow_state = thread->stack_overflow_state();
         // stack overflow
-        if (overflow_state->in_stack_yellow_reserved_zone(addr)) {
-          overflow_state->disable_stack_yellow_reserved_zone();
+        if (thread->in_stack_yellow_reserved_zone(addr)) {
+          thread->disable_stack_yellow_reserved_zone();
           ShouldNotCallThis();
         }
-        else if (overflow_state->in_stack_red_zone(addr)) {
-          overflow_state->disable_stack_red_zone();
+        else if (thread->in_stack_red_zone(addr)) {
+          thread->disable_stack_red_zone();
           ShouldNotCallThis();
         }
       }
@@ -165,6 +203,36 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
     }*/
   }
 
+  // signal-chaining
+  if (PosixSignals::chained_handler(sig, info, ucVoid)) {
+     return true;
+  }
+
+  if (!abort_if_unrecognized) {
+    // caller wants another chance, so give it to him
+    return false;
+  }
+
+#ifndef PRODUCT
+  if (sig == SIGSEGV) {
+    fatal("\n#"
+          "\n#    /--------------------\\"
+          "\n#    | segmentation fault |"
+          "\n#    \\---\\ /--------------/"
+          "\n#        /"
+          "\n#    [-]        |\\_/|    "
+          "\n#    (+)=C      |o o|__  "
+          "\n#    | |        =-*-=__\\ "
+          "\n#    OOO        c_c_(___)");
+  }
+#endif // !PRODUCT
+
+  const char *fmt =
+      "caught unhandled signal " INT32_FORMAT " at address " PTR_FORMAT;
+  char buf[128];
+
+  sprintf(buf, fmt, sig, info->si_addr);
+  fatal(buf);
   return false;
 }
 
@@ -368,7 +436,6 @@ extern "C" {
     long long unsigned int oldval,
     long long unsigned int newval) {
     ShouldNotCallThis();
-    return 0; // silence compiler warnings
   }
 };
 #endif // !_LP64

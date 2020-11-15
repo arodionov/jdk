@@ -2728,9 +2728,7 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
                 lenient == that.lenient &&
                 firstDayOfWeek == that.firstDayOfWeek &&
                 minimalDaysInFirstWeek == that.minimalDaysInFirstWeek &&
-                (zone instanceof ZoneInfo ?
-                    zone.equals(that.zone) :
-                    zone.equals(that.getTimeZone()));
+                zone.equals(that.zone);
         } catch (Exception e) {
             // Note: GregorianCalendar.computeTime throws
             // IllegalArgumentException if the ERA value is invalid

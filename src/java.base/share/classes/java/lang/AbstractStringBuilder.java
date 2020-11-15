@@ -1028,12 +1028,12 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
      * <p> An invocation of this method of the form
      *
      * <pre>{@code
-     * sb.subSequence(begin, end)}</pre>
+     * sb.subSequence(begin,&nbsp;end)}</pre>
      *
      * behaves in exactly the same way as the invocation
      *
      * <pre>{@code
-     * sb.substring(begin, end)}</pre>
+     * sb.substring(begin,&nbsp;end)}</pre>
      *
      * This method is provided so that this class can
      * implement the {@link CharSequence} interface.
@@ -1046,6 +1046,7 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
      *          if {@code start} or {@code end} are negative,
      *          if {@code end} is greater than {@code length()},
      *          or if {@code start} is greater than {@code end}
+     * @spec JSR-51
      */
     @Override
     public CharSequence subSequence(int start, int end) {

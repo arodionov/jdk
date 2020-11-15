@@ -27,7 +27,6 @@
 
 #include "asm/macroAssembler.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
-#include "gc/shenandoah/shenandoahBarrierSet.hpp"
 #ifdef COMPILER1
 class LIR_Assembler;
 class ShenandoahPreBarrierStub;
@@ -38,6 +37,8 @@ class StubCodeGenerator;
 
 class ShenandoahBarrierSetAssembler: public BarrierSetAssembler {
 private:
+
+  static address _shenandoah_lrb;
 
   void satb_write_barrier_pre(MacroAssembler* masm,
                               Register obj,
@@ -56,9 +57,14 @@ private:
 
   void resolve_forward_pointer(MacroAssembler* masm, Register dst, Register tmp = noreg);
   void resolve_forward_pointer_not_null(MacroAssembler* masm, Register dst, Register tmp = noreg);
-  void load_reference_barrier(MacroAssembler* masm, Register dst, Address load_addr, DecoratorSet decorators);
+  void load_reference_barrier(MacroAssembler* masm, Register dst, Address load_addr);
+  void load_reference_barrier_not_null(MacroAssembler* masm, Register dst, Address load_addr);
+  void load_reference_barrier_native(MacroAssembler* masm, Register dst, Address load_addr);
+
+  address generate_shenandoah_lrb(StubCodeGenerator* cgen);
 
 public:
+  static address shenandoah_lrb();
 
   void storeval_barrier(MacroAssembler* masm, Register dst, Register tmp);
 
@@ -66,7 +72,7 @@ public:
   void gen_pre_barrier_stub(LIR_Assembler* ce, ShenandoahPreBarrierStub* stub);
   void gen_load_reference_barrier_stub(LIR_Assembler* ce, ShenandoahLoadReferenceBarrierStub* stub);
   void generate_c1_pre_barrier_runtime_stub(StubAssembler* sasm);
-  void generate_c1_load_reference_barrier_runtime_stub(StubAssembler* sasm, DecoratorSet decorators);
+  void generate_c1_load_reference_barrier_runtime_stub(StubAssembler* sasm, bool is_native);
 #endif
 
   virtual void arraycopy_prologue(MacroAssembler* masm, DecoratorSet decorators, bool is_oop,
@@ -79,6 +85,8 @@ public:
                                              Register obj, Register tmp, Label& slowpath);
   void cmpxchg_oop(MacroAssembler* masm, Register addr, Register expected, Register new_val,
                    bool acquire, bool release, bool is_cae, Register result);
+
+  virtual void barrier_stubs_init();
 };
 
 #endif // CPU_AARCH64_GC_SHENANDOAH_SHENANDOAHBARRIERSETASSEMBLER_AARCH64_HPP

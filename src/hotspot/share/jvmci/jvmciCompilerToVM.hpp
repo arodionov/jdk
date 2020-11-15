@@ -29,7 +29,6 @@
 #include "runtime/javaCalls.hpp"
 #include "runtime/signature.hpp"
 
-class CollectedHeap;
 class JVMCIObjectArray;
 
 class CompilerToVM {

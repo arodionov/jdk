@@ -158,37 +158,41 @@ public class CgroupV1Subsystem implements CgroupSubsystem, CgroupV1Metrics {
      * setSubSystemPath based on the contents of /proc/self/cgroup
      */
     private static void setSubSystemControllerPath(CgroupV1Subsystem subsystem, String[] entry) {
-        String controllerName = entry[1];
-        String base = entry[2];
+        String controllerName;
+        String base;
+        CgroupV1SubsystemController controller = null;
+        CgroupV1SubsystemController controller2 = null;
 
+        controllerName = entry[1];
+        base = entry[2];
         if (controllerName != null && base != null) {
-            for (String cName: controllerName.split(",")) {
-                switch (cName) {
-                    case "memory":
-                        setPath(subsystem, subsystem.memoryController(), base);
-                        break;
-                    case "cpuset":
-                        setPath(subsystem, subsystem.cpuSetController(), base);
-                        break;
-                    case "cpu":
-                        setPath(subsystem, subsystem.cpuController(), base);
-                        break;
-                    case "cpuacct":
-                        setPath(subsystem, subsystem.cpuAcctController(), base);
-                        break;
-                    case "blkio":
-                        setPath(subsystem, subsystem.blkIOController(), base);
-                        break;
-                    // Ignore subsystems that we don't support
-                    default:
-                        break;
-                }
+            switch (controllerName) {
+                case "memory":
+                    controller = subsystem.memoryController();
+                    break;
+                case "cpuset":
+                    controller = subsystem.cpuSetController();
+                    break;
+                case "cpu,cpuacct":
+                case "cpuacct,cpu":
+                    controller = subsystem.cpuController();
+                    controller2 = subsystem.cpuAcctController();
+                    break;
+                case "cpuacct":
+                    controller = subsystem.cpuAcctController();
+                    break;
+                case "cpu":
+                    controller = subsystem.cpuController();
+                    break;
+                case "blkio":
+                    controller = subsystem.blkIOController();
+                    break;
+                // Ignore subsystems that we don't support
+                default:
+                    break;
             }
         }
 
-    }
-
-    private static void setPath(CgroupV1Subsystem subsystem, CgroupV1SubsystemController controller, String base) {
         if (controller != null) {
             controller.setPath(base);
             if (controller instanceof CgroupV1MemorySubSystemController) {
@@ -199,6 +203,9 @@ public class CgroupV1Subsystem implements CgroupSubsystem, CgroupV1Metrics {
                 memorySubSystem.setSwapEnabled(isSwapEnabled);
             }
             subsystem.setActiveSubSystems();
+        }
+        if (controller2 != null) {
+            controller2.setPath(base);
         }
     }
 

@@ -25,7 +25,6 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
-import com.sun.source.doctree.DeprecatedTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.Table;
 import jdk.javadoc.internal.doclets.formats.html.markup.TableHeader;
 
@@ -50,7 +49,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.DeprecatedAPIListBuilder.DeprEl
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
-import jdk.javadoc.internal.doclets.toolkit.util.IndexItem;
 
 /**
  * Generate File to list all the deprecated classes and class members with the
@@ -207,6 +205,8 @@ public class DeprecatedListWriter extends SubWriterHolderWriter {
 
     private EnumMap<DeprElementKind, AbstractMemberWriter> writerMap;
 
+    private final Navigation navBar;
+
     /**
      * Constructor.
      *
@@ -216,6 +216,7 @@ public class DeprecatedListWriter extends SubWriterHolderWriter {
 
     public DeprecatedListWriter(HtmlConfiguration configuration, DocPath filename) {
         super(configuration, filename);
+        this.navBar = new Navigation(null, configuration, PageMode.DEPRECATED, path);
         NestedClassWriterImpl classW = new NestedClassWriterImpl(this);
         writerMap = new EnumMap<>(DeprElementKind.class);
         for (DeprElementKind kind : DeprElementKind.values()) {
@@ -261,46 +262,44 @@ public class DeprecatedListWriter extends SubWriterHolderWriter {
      * @throws DocFileIOException if there is a problem writing the deprecated list
      */
     public static void generate(HtmlConfiguration configuration) throws DocFileIOException {
-        if (configuration.conditionalPages.contains(HtmlConfiguration.ConditionalPage.DEPRECATED)) {
-            DocPath filename = DocPaths.DEPRECATED_LIST;
-            DeprecatedListWriter depr = new DeprecatedListWriter(configuration, filename);
-            depr.generateDeprecatedListFile(configuration.deprecatedAPIListBuilder);
-        }
+        DocPath filename = DocPaths.DEPRECATED_LIST;
+        DeprecatedListWriter depr = new DeprecatedListWriter(configuration, filename);
+        depr.generateDeprecatedListFile(
+               new DeprecatedAPIListBuilder(configuration));
     }
 
     /**
      * Generate the deprecated API list.
      *
-     * @param deprAPI list of deprecated API built already.
+     * @param deprapi list of deprecated API built already.
      * @throws DocFileIOException if there is a problem writing the deprecated list
      */
-    protected void generateDeprecatedListFile(DeprecatedAPIListBuilder deprAPI)
+    protected void generateDeprecatedListFile(DeprecatedAPIListBuilder deprapi)
             throws DocFileIOException {
         HtmlTree body = getHeader();
-        bodyContents.addMainContent(getContentsList(deprAPI));
+        bodyContents.addMainContent(getContentsList(deprapi));
         String memberTableSummary;
         Content content = new ContentBuilder();
         for (DeprElementKind kind : DeprElementKind.values()) {
-            if (deprAPI.hasDocumentation(kind)) {
+            if (deprapi.hasDocumentation(kind)) {
                 memberTableSummary = resources.getText("doclet.Member_Table_Summary",
                         resources.getText(getHeadingKey(kind)),
                         resources.getText(getSummaryKey(kind)));
                 TableHeader memberTableHeader = new TableHeader(
                         contents.getContent(getHeaderKey(kind)), contents.descriptionLabel);
-                addDeprecatedAPI(deprAPI.getSet(kind), getAnchorName(kind),
+                addDeprecatedAPI(deprapi.getSet(kind), getAnchorName(kind),
                             getHeadingKey(kind), memberTableSummary, memberTableHeader, content);
             }
         }
         bodyContents.addMainContent(content);
-        bodyContents.setFooter(getFooter());
+        HtmlTree htmlTree = HtmlTree.FOOTER();
+        navBar.setUserFooter(getUserHeaderFooter(false));
+        htmlTree.add(navBar.getContent(Navigation.Position.BOTTOM));
+        addBottom(htmlTree);
+        bodyContents.setFooter(htmlTree);
         String description = "deprecated elements";
         body.add(bodyContents);
         printHtmlDocument(null, description, body);
-
-        if (!deprAPI.isEmpty() && configuration.mainIndex != null) {
-            configuration.mainIndex.add(IndexItem.of(IndexItem.Category.TAGS,
-                    resources.getText("doclet.Deprecated_API"), path));
-        }
     }
 
     /**
@@ -349,7 +348,11 @@ public class DeprecatedListWriter extends SubWriterHolderWriter {
     public HtmlTree getHeader() {
         String title = resources.getText("doclet.Window_Deprecated_List");
         HtmlTree bodyTree = getBody(getWindowTitle(title));
-        bodyContents.setHeader(getHeader(PageMode.DEPRECATED));
+        Content headerContent = new ContentBuilder();
+        addTop(headerContent);
+        navBar.setUserHeader(getUserHeaderFooter(true));
+        headerContent.add(navBar.getContent(Navigation.Position.TOP));
+        bodyContents.setHeader(headerContent);
         return bodyTree;
     }
 
@@ -367,7 +370,7 @@ public class DeprecatedListWriter extends SubWriterHolderWriter {
             String tableSummary, TableHeader tableHeader, Content contentTree) {
         if (deprList.size() > 0) {
             Content caption = contents.getContent(headingKey);
-            Table table = new Table(HtmlStyle.summaryTable)
+            Table table = new Table(HtmlStyle.deprecatedSummary, HtmlStyle.summaryTable)
                     .setCaption(caption)
                     .setHeader(tableHeader)
                     .setId(id)
@@ -387,7 +390,7 @@ public class DeprecatedListWriter extends SubWriterHolderWriter {
                         link = getDeprecatedLink(e);
                 }
                 Content desc = new ContentBuilder();
-                List<? extends DeprecatedTree> tags = utils.getDeprecatedTrees(e);
+                List<? extends DocTree> tags = utils.getDeprecatedTrees(e);
                 if (!tags.isEmpty()) {
                     addInlineDeprecatedComment(e, tags.get(0), desc);
                 } else {

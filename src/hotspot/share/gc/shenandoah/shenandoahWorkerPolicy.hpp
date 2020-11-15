@@ -32,7 +32,6 @@ private:
   static uint _prev_par_marking;
   static uint _prev_conc_marking;
   static uint _prev_conc_root_proc;
-  static uint _prev_conc_refs_proc;
   static uint _prev_conc_evac;
   static uint _prev_fullgc;
   static uint _prev_degengc;
@@ -54,9 +53,6 @@ public:
   // Calculate workers for concurrent root processing
   static uint calc_workers_for_conc_root_processing();
 
-  // Calculate workers for concurrent refs processing
-  static uint calc_workers_for_conc_refs_processing();
-
   // Calculate workers for concurrent evacuation (concurrent GC)
   static uint calc_workers_for_conc_evac();
 
@@ -71,6 +67,9 @@ public:
 
   // Calculate workers for parallel/final reference update
   static uint calc_workers_for_final_update_ref();
+
+  // Calculate workers for concurrent precleaning
+  static uint calc_workers_for_conc_preclean();
 
   // Calculate workers for concurrent cleanup
   static uint calc_workers_for_conc_cleanup();

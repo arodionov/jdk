@@ -45,6 +45,7 @@ import java.util.ResourceBundle;
  * @author Masayoshi Okutsu
  * @since 1.8
  * @revised 9
+ * @spec JPMS
  * @see ResourceBundle#getBundle(String, java.util.Locale, ClassLoader, ResourceBundle.Control)
  *      ResourceBundle.getBundle
  * @see java.util.ServiceLoader#load(Class)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,14 +29,8 @@
   run main GetSizeTest.html
 */
 
-import java.awt.Choice;
-import java.awt.Frame;
-import java.awt.Panel;
-import java.awt.Point;
-import java.awt.Robot;
-import java.awt.event.InputEvent;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
+import java.awt.*;
+import java.awt.event.*;
 
 public class GetSizeTest {
 
@@ -46,15 +40,16 @@ public class GetSizeTest {
                          "what choices do I have?",
                          "Will I pick the same thing in the future?",
                 };
-    static volatile boolean passed = false;
+    static boolean passed = false;
+    static Robot robot = null;
 
-    public static void main(String args[]) throws Exception {
-        Frame f = null;
+    public static void main(String args[])
+    {
         try {
-            Robot robot = new Robot();
-            robot.setAutoDelay(150);
+            robot = new Robot();
+            robot.setAutoDelay(50);
 
-            f = new Frame("choice test");
+            Frame f = new Frame("choice test");
 
             Panel p = new Panel();
             p.setLayout(null);
@@ -75,7 +70,14 @@ public class GetSizeTest {
             f.add(p);
 
             f.setSize(300, 300);
-            f.setLocationRelativeTo(null);
+
+            f.addWindowListener(new WindowAdapter() {
+                public void windowClosing(WindowEvent we) {
+                    System.err.println("Test passed");
+                    passed = true;
+                }
+            });
+
             f.setVisible(true);
 
             c.setSize(200, 200);
@@ -86,13 +88,14 @@ public class GetSizeTest {
             Point pt = c.getLocationOnScreen();
             robot.mouseMove(pt.x + c.getWidth() - 10, pt.y + c.getHeight() / 2);
             robot.waitForIdle();
-            robot.mousePress(InputEvent.BUTTON2_DOWN_MASK);
-            robot.mouseRelease(InputEvent.BUTTON2_DOWN_MASK);
+            robot.mousePress(InputEvent.BUTTON2_MASK);
+            robot.mouseRelease(InputEvent.BUTTON2_MASK);
             robot.waitForIdle();
-        } finally {
-            if (f != null) {
-                f.dispose();
+        } catch (Throwable e) {
+            if (robot == null){
+                throw new RuntimeException( "Test failed.Unable to initialize Robot "+e);
             }
+            throw new RuntimeException( "Test failed due to thrown exception "+e);
         }
         if (!passed) {
             throw new RuntimeException( "Timeout. Choice component size is not actual size." );

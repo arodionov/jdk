@@ -26,7 +26,6 @@
 #include "classfile/altHashing.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/javaClasses.inline.hpp"
-#include "classfile/javaThreadStatus.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
@@ -54,7 +53,6 @@
 #include "oops/recordComponent.hpp"
 #include "oops/typeArrayOop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
-#include "prims/methodHandles.hpp"
 #include "prims/resolvedMethodTable.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/frame.inline.hpp"
@@ -86,7 +84,7 @@
 #endif
 
 #define DECLARE_INJECTED_FIELD(klass, name, signature, may_be_java)           \
-  { SystemDictionary::WK_KLASS_ENUM_NAME(klass), VM_SYMBOL_ENUM_NAME(name##_name), VM_SYMBOL_ENUM_NAME(signature), may_be_java },
+  { SystemDictionary::WK_KLASS_ENUM_NAME(klass), vmSymbols::VM_SYMBOL_ENUM_NAME(name##_name), vmSymbols::VM_SYMBOL_ENUM_NAME(signature), may_be_java },
 
 InjectedField JavaClasses::_injected_fields[] = {
   ALL_INJECTED_FIELDS(DECLARE_INJECTED_FIELD)
@@ -114,8 +112,8 @@ int JavaClasses::compute_injected_offset(InjectedFieldID id) {
 InjectedField* JavaClasses::get_injected(Symbol* class_name, int* field_count) {
   *field_count = 0;
 
-  vmSymbolID sid = vmSymbols::find_sid(class_name);
-  if (sid == vmSymbolID::NO_SID) {
+  vmSymbols::SID sid = vmSymbols::find_sid(class_name);
+  if (sid == vmSymbols::NO_SID) {
     // Only well known classes can inject fields
     return NULL;
   }
@@ -124,7 +122,7 @@ InjectedField* JavaClasses::get_injected(Symbol* class_name, int* field_count) {
   int start = -1;
 
 #define LOOKUP_INJECTED_FIELD(klass, name, signature, may_be_java) \
-  if (sid == VM_SYMBOL_ENUM_NAME(klass)) {                         \
+  if (sid == vmSymbols::VM_SYMBOL_ENUM_NAME(klass)) {              \
     count++;                                                       \
     if (start == -1) start = klass##_##name##_enum;                \
   }
@@ -1246,8 +1244,6 @@ oop java_lang_Class::process_archived_mirror(Klass* k, oop mirror,
     java_lang_Class:set_init_lock(archived_mirror, NULL);
 
     set_protection_domain(archived_mirror, NULL);
-    set_signers(archived_mirror, NULL);
-    set_source_file(archived_mirror, NULL);
   }
 
   // clear class loader and mirror_module_field
@@ -1816,18 +1812,18 @@ jlong java_lang_Thread::stackSize(oop java_thread) {
 
 // Write the thread status value to threadStatus field in java.lang.Thread java class.
 void java_lang_Thread::set_thread_status(oop java_thread,
-                                         JavaThreadStatus status) {
-  java_thread->int_field_put(_thread_status_offset, static_cast<int>(status));
+                                         java_lang_Thread::ThreadStatus status) {
+  java_thread->int_field_put(_thread_status_offset, status);
 }
 
 // Read thread status value from threadStatus field in java.lang.Thread java class.
-JavaThreadStatus java_lang_Thread::get_thread_status(oop java_thread) {
+java_lang_Thread::ThreadStatus java_lang_Thread::get_thread_status(oop java_thread) {
   // Make sure the caller is operating on behalf of the VM or is
   // running VM code (state == _thread_in_vm).
   assert(Threads_lock->owned_by_self() || Thread::current()->is_VM_thread() ||
          JavaThread::current()->thread_state() == _thread_in_vm,
          "Java Thread is not running in vm");
-  return static_cast<JavaThreadStatus>(java_thread->int_field(_thread_status_offset));
+  return (java_lang_Thread::ThreadStatus)java_thread->int_field(_thread_status_offset);
 }
 
 
@@ -1840,17 +1836,17 @@ oop java_lang_Thread::park_blocker(oop java_thread) {
 }
 
 const char* java_lang_Thread::thread_status_name(oop java_thread) {
-  JavaThreadStatus status = static_cast<JavaThreadStatus>(java_thread->int_field(_thread_status_offset));
+  ThreadStatus status = (java_lang_Thread::ThreadStatus)java_thread->int_field(_thread_status_offset);
   switch (status) {
-    case JavaThreadStatus::NEW                      : return "NEW";
-    case JavaThreadStatus::RUNNABLE                 : return "RUNNABLE";
-    case JavaThreadStatus::SLEEPING                 : return "TIMED_WAITING (sleeping)";
-    case JavaThreadStatus::IN_OBJECT_WAIT           : return "WAITING (on object monitor)";
-    case JavaThreadStatus::IN_OBJECT_WAIT_TIMED     : return "TIMED_WAITING (on object monitor)";
-    case JavaThreadStatus::PARKED                   : return "WAITING (parking)";
-    case JavaThreadStatus::PARKED_TIMED             : return "TIMED_WAITING (parking)";
-    case JavaThreadStatus::BLOCKED_ON_MONITOR_ENTER : return "BLOCKED (on object monitor)";
-    case JavaThreadStatus::TERMINATED               : return "TERMINATED";
+    case NEW                      : return "NEW";
+    case RUNNABLE                 : return "RUNNABLE";
+    case SLEEPING                 : return "TIMED_WAITING (sleeping)";
+    case IN_OBJECT_WAIT           : return "WAITING (on object monitor)";
+    case IN_OBJECT_WAIT_TIMED     : return "TIMED_WAITING (on object monitor)";
+    case PARKED                   : return "WAITING (parking)";
+    case PARKED_TIMED             : return "TIMED_WAITING (parking)";
+    case BLOCKED_ON_MONITOR_ENTER : return "BLOCKED (on object monitor)";
+    case TERMINATED               : return "TERMINATED";
     default                       : return "UNKNOWN";
   };
 }
@@ -2440,10 +2436,10 @@ void java_lang_Throwable::fill_in_stack_trace(Handle throwable, const methodHand
   // The "ASSERT" here is to verify this method generates the exactly same stack
   // trace as utilizing vframe.
 #ifdef ASSERT
-  vframeStream st(thread, false /* stop_at_java_call_stub */, false /* process_frames */);
+  vframeStream st(thread);
 #endif
   int total_count = 0;
-  RegisterMap map(thread, false /* update */, false /* process_frames */);
+  RegisterMap map(thread, false);
   int decode_offset = 0;
   CompiledMethod* nm = NULL;
   bool skip_fillInStackTrace_check = false;
@@ -2585,7 +2581,7 @@ void java_lang_Throwable::fill_in_stack_trace_of_preallocated_backtrace(Handle t
   assert(backtrace.not_null(), "backtrace should have been preallocated");
 
   ResourceMark rm(THREAD);
-  vframeStream st(THREAD, false /* stop_at_java_call_stub */, false /* process_frames */);
+  vframeStream st(THREAD);
 
   BacktraceBuilder bt(THREAD, backtrace);
 
@@ -4539,30 +4535,6 @@ void java_util_concurrent_locks_AbstractOwnableSynchronizer::serialize_offsets(S
   AOS_FIELDS_DO(FIELD_SERIALIZE_OFFSET);
 }
 #endif
-
-int vector_VectorPayload::_payload_offset;
-
-#define VECTORPAYLOAD_FIELDS_DO(macro) \
-  macro(_payload_offset, k, "payload", object_signature, false)
-
-void vector_VectorPayload::compute_offsets() {
-  InstanceKlass* k = SystemDictionary::vector_VectorPayload_klass();
-  VECTORPAYLOAD_FIELDS_DO(FIELD_COMPUTE_OFFSET);
-}
-
-#if INCLUDE_CDS
-void vector_VectorPayload::serialize_offsets(SerializeClosure* f) {
-  VECTORPAYLOAD_FIELDS_DO(FIELD_SERIALIZE_OFFSET);
-}
-#endif
-
-void vector_VectorPayload::set_payload(oop o, oop val) {
-  o->obj_field_put(_payload_offset, val);
-}
-
-bool vector_VectorPayload::is_instance(oop obj) {
-  return obj != NULL && is_subclass(obj->klass());
-}
 
 int java_lang_Integer_IntegerCache::_static_cache_offset;
 int java_lang_Long_LongCache::_static_cache_offset;

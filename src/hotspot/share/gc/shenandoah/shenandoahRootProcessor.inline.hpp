@@ -35,7 +35,6 @@
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
 #include "memory/resourceArea.hpp"
-#include "runtime/mutexLocker.hpp"
 #include "runtime/safepoint.hpp"
 
 template <bool CONCURRENT>
@@ -82,49 +81,43 @@ ShenandoahClassLoaderDataRoots<CONCURRENT, SINGLE_THREADED>::ShenandoahClassLoad
   if (!SINGLE_THREADED) {
     ClassLoaderDataGraph::clear_claimed_marks();
   }
-  if (CONCURRENT && !SINGLE_THREADED) {
+  if (CONCURRENT) {
     ClassLoaderDataGraph_lock->lock();
   }
-
-  // Non-concurrent mode only runs at safepoints by VM thread
-  assert(CONCURRENT || SafepointSynchronize::is_at_safepoint(), "Must be at a safepoint");
-  assert(CONCURRENT || Thread::current()->is_VM_thread(), "Can only be done by VM thread");
 }
 
 template <bool CONCURRENT, bool SINGLE_THREADED>
 ShenandoahClassLoaderDataRoots<CONCURRENT, SINGLE_THREADED>::~ShenandoahClassLoaderDataRoots() {
-  if (CONCURRENT && !SINGLE_THREADED) {
-    ClassLoaderDataGraph_lock->unlock();
-  }
-}
-
-template <bool CONCURRENT, bool SINGLE_THREADED>
-void ShenandoahClassLoaderDataRoots<CONCURRENT, SINGLE_THREADED>::cld_do_impl(CldDo f, CLDClosure* clds, uint worker_id) {
   if (CONCURRENT) {
-    if (_semaphore.try_acquire()) {
-      ShenandoahWorkerTimingsTracker timer(_phase, ShenandoahPhaseTimings::CLDGRoots, worker_id);
-      if (SINGLE_THREADED){
-        MutexLocker ml(ClassLoaderDataGraph_lock, Mutex::_no_safepoint_check_flag);
-        f(clds);
-      } else {
-        f(clds);
-      }
-      _semaphore.claim_all();
-    }
-  } else {
-    f(clds);
+    ClassLoaderDataGraph_lock->unlock();
   }
 }
 
 
 template <bool CONCURRENT, bool SINGLE_THREADED>
 void ShenandoahClassLoaderDataRoots<CONCURRENT, SINGLE_THREADED>::always_strong_cld_do(CLDClosure* clds, uint worker_id) {
-  cld_do_impl(&ClassLoaderDataGraph::always_strong_cld_do, clds, worker_id);
+  if (SINGLE_THREADED) {
+    assert(SafepointSynchronize::is_at_safepoint(), "Must be at a safepoint");
+    assert(Thread::current()->is_VM_thread(), "Single threaded CLDG iteration can only be done by VM thread");
+    ClassLoaderDataGraph::always_strong_cld_do(clds);
+  } else if (_semaphore.try_acquire()) {
+    ShenandoahWorkerTimingsTracker timer(_phase, ShenandoahPhaseTimings::CLDGRoots, worker_id);
+    ClassLoaderDataGraph::always_strong_cld_do(clds);
+    _semaphore.claim_all();
+  }
 }
 
 template <bool CONCURRENT, bool SINGLE_THREADED>
 void ShenandoahClassLoaderDataRoots<CONCURRENT, SINGLE_THREADED>::cld_do(CLDClosure* clds, uint worker_id) {
-  cld_do_impl(&ClassLoaderDataGraph::cld_do, clds, worker_id);
+  if (SINGLE_THREADED) {
+    assert(SafepointSynchronize::is_at_safepoint(), "Must be at a safepoint");
+    assert(Thread::current()->is_VM_thread(), "Single threaded CLDG iteration can only be done by VM thread");
+    ClassLoaderDataGraph::cld_do(clds);
+  } else if (_semaphore.try_acquire()) {
+    ShenandoahWorkerTimingsTracker timer(_phase, ShenandoahPhaseTimings::CLDGRoots, worker_id);
+    ClassLoaderDataGraph::cld_do(clds);
+    _semaphore.claim_all();
+  }
 }
 
 class ShenandoahParallelOopsDoThreadClosure : public ThreadClosure {
@@ -149,6 +142,7 @@ ShenandoahConcurrentRootScanner<CONCURRENT>::ShenandoahConcurrentRootScanner(uin
                                                                              ShenandoahPhaseTimings::Phase phase) :
   _vm_roots(phase),
   _cld_roots(phase, n_workers),
+  _dedup_roots(phase),
   _codecache_snapshot(NULL),
   _phase(phase) {
   if (!ShenandoahHeap::heap()->unload_classes()) {
@@ -179,7 +173,9 @@ void ShenandoahConcurrentRootScanner<CONCURRENT>::oops_do(OopClosure* oops, uint
   _vm_roots.oops_do(oops, worker_id);
 
   if (!heap->unload_classes()) {
+    AlwaysTrueClosure always_true;
     _cld_roots.cld_do(&clds_cl, worker_id);
+    _dedup_roots.oops_do(&always_true, oops, worker_id);
     ShenandoahWorkerTimingsTracker timer(_phase, ShenandoahPhaseTimings::CodeCacheRoots, worker_id);
     CodeBlobToOopClosure blobs(oops, !CodeBlobToOopClosure::FixRelocations);
     _codecache_snapshot->parallel_blobs_do(&blobs);

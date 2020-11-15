@@ -47,7 +47,6 @@ public final class StaticProperty {
     private static final String JAVA_LIBRARY_PATH;
     private static final String SUN_BOOT_LIBRARY_PATH;
     private static final String JDK_SERIAL_FILTER;
-    private static final String JAVA_IO_TMPDIR;
 
     private StaticProperty() {}
 
@@ -57,7 +56,6 @@ public final class StaticProperty {
         USER_HOME = getProperty(props, "user.home");
         USER_DIR  = getProperty(props, "user.dir");
         USER_NAME = getProperty(props, "user.name");
-        JAVA_IO_TMPDIR = getProperty(props, "java.io.tmpdir");
         JAVA_LIBRARY_PATH = getProperty(props, "java.library.path", "");
         SUN_BOOT_LIBRARY_PATH = getProperty(props, "sun.boot.library.path", "");
         JDK_SERIAL_FILTER = getProperty(props, "jdk.serialFilter", null);
@@ -140,19 +138,6 @@ public final class StaticProperty {
      */
     public static String javaLibraryPath() {
         return JAVA_LIBRARY_PATH;
-    }
-
-    /**
-     * Return the {@code java.io.tmpdir} system property.
-     *
-     * <strong>{@link SecurityManager#checkPropertyAccess} is NOT checked
-     * in this method. The caller of this method should take care to ensure
-     * that the returned property is not made accessible to untrusted code.</strong>
-     *
-     * @return the {@code java.io.tmpdir} system property
-     */
-    public static String javaIoTmpDir() {
-        return JAVA_IO_TMPDIR;
     }
 
     /**

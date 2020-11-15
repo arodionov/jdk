@@ -30,6 +30,7 @@ import java.security.Permission;
 import java.security.PrivilegedAction;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 
@@ -69,7 +70,7 @@ public final class RuntimeUtil {
         scheduler = new ScheduledThreadPoolExecutor(
             schedulerThreads,
             new ThreadFactory() {
-                private final AtomicInteger count = new AtomicInteger();
+                private final AtomicInteger count = new AtomicInteger(0);
                 public Thread newThread(Runnable runnable) {
                     try {
                         return AccessController.doPrivileged(

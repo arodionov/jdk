@@ -26,5 +26,4 @@ package p;
 /**
  * A test class.
  */
-@Deprecated
 public class Foo {}

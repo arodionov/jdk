@@ -1353,10 +1353,8 @@ InstanceKlass* SystemDictionary::load_shared_lambda_proxy_class(InstanceKlass* i
 
   InstanceKlass* loaded_ik = load_shared_class(ik, class_loader, protection_domain, NULL, pkg_entry, CHECK_NULL);
 
-  if (loaded_ik != NULL) {
-    assert(shared_nest_host->is_same_class_package(ik),
-           "lambda proxy class and its nest host must be in the same package");
-  }
+  assert(shared_nest_host->is_same_class_package(ik),
+         "lambda proxy class and its nest host must be in the same package");
 
   return loaded_ik;
 }
@@ -1984,11 +1982,9 @@ void SystemDictionary::initialize(TRAPS) {
 }
 
 // Compact table of directions on the initialization of klasses:
-// TODO: we should change the base type of vmSymbolID from int to short. Then we can declare this
-// array as vmSymbolID wk_init_info[] anf avoid all the type casts.
 static const short wk_init_info[] = {
   #define WK_KLASS_INIT_INFO(name, symbol) \
-    ((short)VM_SYMBOL_ENUM_NAME(symbol)),
+    ((short)vmSymbols::VM_SYMBOL_ENUM_NAME(symbol)),
 
   WK_KLASSES_DO(WK_KLASS_INIT_INFO)
   #undef WK_KLASS_INIT_INFO
@@ -1999,7 +1995,7 @@ static const short wk_init_info[] = {
 bool SystemDictionary::is_well_known_klass(Symbol* class_name) {
   int sid;
   for (int i = 0; (sid = wk_init_info[i]) != 0; i++) {
-    Symbol* symbol = vmSymbols::symbol_at(vmSymbols::as_SID(sid));
+    Symbol* symbol = vmSymbols::symbol_at((vmSymbols::SID)sid);
     if (class_name == symbol) {
       return true;
     }
@@ -2015,7 +2011,7 @@ bool SystemDictionary::is_well_known_klass(Klass* k) {
 bool SystemDictionary::resolve_wk_klass(WKID id, TRAPS) {
   assert(id >= (int)FIRST_WKID && id < (int)WKID_LIMIT, "oob");
   int sid = wk_init_info[id - FIRST_WKID];
-  Symbol* symbol = vmSymbols::symbol_at(vmSymbols::as_SID(sid));
+  Symbol* symbol = vmSymbols::symbol_at((vmSymbols::SID)sid);
   InstanceKlass** klassp = &_well_known_klasses[id];
 
 #if INCLUDE_CDS

@@ -276,7 +276,7 @@ public final class ConstantDescs {
                                           "TRUE", CD_Boolean, CD_Boolean);
 
     /**
-     * Nominal descriptor representing the constant {@linkplain Boolean#FALSE}
+     * Nominal descriptor representing the constant {@linkplain Boolean#TRUE}
      * @since 15
      */
     public static final DynamicConstantDesc<Boolean> FALSE

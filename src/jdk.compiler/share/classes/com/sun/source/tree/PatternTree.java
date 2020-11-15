@@ -26,9 +26,17 @@
 package com.sun.source.tree;
 
 /**
- * A tree node used as the base class for the different kinds of
- * patterns.
+ * {@preview Associated with pattern matching for instanceof, a preview feature of
+ *           the Java language.
  *
- * @since 16
+ *           This interface is associated with <i>pattern matching for instanceof</i>, a preview
+ *           feature of the Java language. Preview features
+ *           may be removed in a future release, or upgraded to permanent
+ *           features of the Java language.}
+ *
+ * A tree node used as the base class for the different kinds of
+ * statements.
+ *
+ * @since 14
  */
 public interface PatternTree extends Tree {}

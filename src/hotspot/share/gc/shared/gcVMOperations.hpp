@@ -28,7 +28,6 @@
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/genCollectedHeap.hpp"
 #include "memory/heapInspection.hpp"
-#include "memory/metaspace.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/handles.hpp"
 #include "runtime/jniHandles.hpp"

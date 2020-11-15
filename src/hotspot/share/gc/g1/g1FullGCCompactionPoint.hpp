@@ -53,6 +53,7 @@ public:
   void update();
   void forward(oop object, size_t size);
   void add(HeapRegion* hr);
+  void merge(G1FullGCCompactionPoint* other);
 
   HeapRegion* remove_last();
   HeapRegion* current_region();

@@ -28,6 +28,9 @@
  * @summary Checks that there is no an inconsistence in combo box
  *          behavior when user points an item in combo popup
  *          by mouse and then uses UP/DOWN keys.
+ * @library ../../regtesthelpers
+ * @build Util
+ * @author Mikhail Lapshin
  * @run main bug6236162
  */
 
@@ -41,11 +44,8 @@ public class bug6236162 {
     private static JFrame frame;
     private static JComboBox combo;
     private static MyComboUI comboUI;
-    private static Robot robot;
 
     public static void main(String[] args) throws Exception {
-        robot = new Robot();
-        robot.setAutoDelay(100);
         try {
             UIManager.setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName());
             SwingUtilities.invokeAndWait(new Runnable() {
@@ -53,8 +53,6 @@ public class bug6236162 {
                     createAndShowGUI();
                 }
             });
-            robot.waitForIdle();
-            robot.delay(1000);
             test();
             System.out.println("Test passed");
         } finally {
@@ -76,14 +74,15 @@ public class bug6236162 {
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);
-        frame.toFront();
     }
 
     private static void test() throws AWTException {
+        Robot robot = new Robot();
+        robot.setAutoDelay(50);
 
         // Open popup menu
-        robot.keyPress(KeyEvent.VK_DOWN);
-        robot.keyRelease(KeyEvent.VK_DOWN);
+        robot.waitForIdle();
+        Util.hitKeys(robot, KeyEvent.VK_DOWN);
 
         // Move mouse to the first popup menu item
         robot.waitForIdle();
@@ -99,8 +98,7 @@ public class bug6236162 {
 
         // Select the second popup menu item
         robot.waitForIdle();
-        robot.keyPress(KeyEvent.VK_DOWN);
-        robot.keyRelease(KeyEvent.VK_DOWN);
+        Util.hitKeys(robot, KeyEvent.VK_DOWN);
 
         robot.waitForIdle();
         JList list = comboUI.getComboPopup().getList();

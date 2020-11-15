@@ -32,7 +32,6 @@ import jdk.test.lib.containers.docker.DockerTestUtils;
 
 /*
  * @test
- * @key cgroups
  * @summary Test JDK Metrics class when running inside docker container
  * @requires docker.support
  * @library /test/lib

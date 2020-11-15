@@ -161,17 +161,17 @@ public class TestIndirectExportsOpens extends JavadocTester {
         checkOutput("a/module-summary.html", true,
                 "Indirect Exports",
                 """
-                    <div class="col-first odd-row-color"><a href="../m/module-summary.html">m</a></div>
-                    <div class="col-last odd-row-color"><a href="../m/exportsto/package-summary.html">exportsto</a></div>
-                    </div>
+                    <th class="col-first" scope="row"><a href="../m/module-summary.html">m</a></th>
+                    <td class="col-last"><a href="../m/exportsto/package-summary.html">exportsto</a></td>
+                    </tr>
                     """);
 
         checkOutput("a/module-summary.html", true,
                 "Indirect Opens",
                 """
-                    <div class="col-first even-row-color"><a href="../m/module-summary.html">m</a></div>
-                    <div class="col-last even-row-color">opensto</div>
-                    </div>
+                    <th class="col-first" scope="row"><a href="../m/module-summary.html">m</a></th>
+                    <td class="col-last">opensto</td>
+                    </tr>
                     """);
     }
 
@@ -195,13 +195,23 @@ public class TestIndirectExportsOpens extends JavadocTester {
 
         checkOutput("a/module-summary.html", present,
                 """
-                    <div class="caption"><span>""" + typeString + """
-                    </span></div>
-                    <div class="details-table two-column-summary">
-                    <div class="table-header col-first">From</div>
-                    <div class="table-header col-last">Packages</div>
-                    <div class="col-first even-row-color"><a href="../m/module-summary.html">m</a></div>
-                    <div class="col-last even-row-color"><a href="../m/pm/package-summary.html">pm</a></div>
+                    <div class="packages-summary">
+                    <table class="details-table">
+                    <caption><span>""" + typeString + """
+                    </span></caption>
+                    <thead>
+                    <tr>
+                    <th class="col-first" scope="col">From</th>
+                    <th class="col-last" scope="col">Packages</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr class="alt-color">
+                    <th class="col-first" scope="row"><a href="../m/module-summary.html">m</a></th>
+                    <td class="col-last"><a href="../m/pm/package-summary.html">pm</a></td>
+                    </tr>
+                    </tbody>
+                    </table>
                     </div>""");
     }
 }

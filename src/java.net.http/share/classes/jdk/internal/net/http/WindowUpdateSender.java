@@ -39,7 +39,7 @@ abstract class WindowUpdateSender {
 
     final int limit;
     final Http2Connection connection;
-    final AtomicInteger received = new AtomicInteger();
+    final AtomicInteger received = new AtomicInteger(0);
 
     WindowUpdateSender(Http2Connection connection) {
         this(connection, connection.clientSettings.getParameter(SettingsFrame.INITIAL_WINDOW_SIZE));

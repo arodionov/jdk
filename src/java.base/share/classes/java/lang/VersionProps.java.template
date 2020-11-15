@@ -36,7 +36,6 @@ class VersionProps {
     private static final String launcher_name =
         "@@LAUNCHER_NAME@@";
 
-    // This field is read by HotSpot
     private static final String java_version =
         "@@VERSION_SHORT@@";
 

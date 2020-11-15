@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,27 +25,34 @@
 #define SHARE_GC_Z_ZARRAY_HPP
 
 #include "memory/allocation.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/growableArray.hpp"
 
-template <typename T> using ZArray = GrowableArrayCHeap<T, mtGC>;
+template <typename T>
+class ZArray : public GrowableArrayCHeap<T, mtGC> {
+public:
+  ZArray();
 
-template <typename T, bool Parallel>
+  void transfer(ZArray<T>* from);
+};
+
+template <typename T, bool parallel>
 class ZArrayIteratorImpl : public StackObj {
 private:
-  const T*       _next;
-  const T* const _end;
-
-  bool next_serial(T* elem);
-  bool next_parallel(T* elem);
+  ZArray<T>* const _array;
+  int              _next;
 
 public:
-  ZArrayIteratorImpl(const T* array, size_t length);
-  ZArrayIteratorImpl(const ZArray<T>* array);
+  ZArrayIteratorImpl(ZArray<T>* array);
 
   bool next(T* elem);
 };
 
-template <typename T> using ZArrayIterator = ZArrayIteratorImpl<T, false /* Parallel */>;
-template <typename T> using ZArrayParallelIterator = ZArrayIteratorImpl<T, true /* Parallel */>;
+// Iterator types
+#define ZARRAY_SERIAL      false
+#define ZARRAY_PARALLEL    true
+
+template <typename T> using ZArrayIterator = ZArrayIteratorImpl<T, ZARRAY_SERIAL>;
+template <typename T> using ZArrayParallelIterator = ZArrayIteratorImpl<T, ZARRAY_PARALLEL>;
 
 #endif // SHARE_GC_Z_ZARRAY_HPP

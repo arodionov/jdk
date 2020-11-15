@@ -28,6 +28,7 @@
 #include "memory/allocation.hpp"
 
 class ZPage;
+class ZRelocationSet;
 
 class ZRelocationSetSelectorGroupStats {
   friend class ZRelocationSetSelectorGroup;
@@ -74,8 +75,10 @@ private:
   const size_t                     _page_size;
   const size_t                     _object_size_limit;
   const size_t                     _fragmentation_limit;
+
   ZArray<ZPage*>                   _registered_pages;
-  size_t                           _forwarding_entries;
+  ZPage**                          _sorted_pages;
+  size_t                           _nselected;
   ZRelocationSetSelectorGroupStats _stats;
 
   bool is_disabled();
@@ -88,13 +91,14 @@ public:
                               uint8_t page_type,
                               size_t page_size,
                               size_t object_size_limit);
+  ~ZRelocationSetSelectorGroup();
 
   void register_live_page(ZPage* page);
   void register_garbage_page(ZPage* page);
   void select();
 
-  const ZArray<ZPage*>* selected() const;
-  size_t forwarding_entries() const;
+  ZPage* const* selected() const;
+  size_t nselected() const;
 
   const ZRelocationSetSelectorGroupStats& stats() const;
 };
@@ -104,7 +108,6 @@ private:
   ZRelocationSetSelectorGroup _small;
   ZRelocationSetSelectorGroup _medium;
   ZRelocationSetSelectorGroup _large;
-  ZArray<ZPage*>              _garbage_pages;
 
   size_t total() const;
   size_t empty() const;
@@ -116,16 +119,7 @@ public:
 
   void register_live_page(ZPage* page);
   void register_garbage_page(ZPage* page);
-
-  bool should_free_garbage_pages(int bulk) const;
-  const ZArray<ZPage*>* garbage_pages() const;
-  void clear_garbage_pages();
-
-  void select();
-
-  const ZArray<ZPage*>* small() const;
-  const ZArray<ZPage*>* medium() const;
-  size_t forwarding_entries() const;
+  void select(ZRelocationSet* relocation_set);
 
   ZRelocationSetSelectorStats stats() const;
 };

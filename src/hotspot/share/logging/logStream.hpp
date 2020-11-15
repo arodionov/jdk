@@ -27,6 +27,7 @@
 
 #include "logging/log.hpp"
 #include "logging/logHandle.hpp"
+#include "memory/resourceArea.hpp"
 #include "utilities/ostream.hpp"
 
 

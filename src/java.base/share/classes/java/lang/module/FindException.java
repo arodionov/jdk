@@ -33,6 +33,7 @@ package java.lang.module;
  * reasons.
  *
  * @since 9
+ * @spec JPMS
  */
 
 public class FindException extends RuntimeException {

@@ -24,6 +24,7 @@
 #ifndef SHARE_GC_Z_ZTRACER_INLINE_HPP
 #define SHARE_GC_Z_ZTRACER_INLINE_HPP
 
+#include "gc/z/zStat.hpp"
 #include "gc/z/zTracer.hpp"
 #include "jfr/jfrEvents.hpp"
 

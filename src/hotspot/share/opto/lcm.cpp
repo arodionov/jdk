@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -430,7 +430,7 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
     tmp1->replace_by(tmp);
     tmp2->replace_by(tmp1);
     tmp->replace_by(tmp2);
-    tmp->destruct(NULL);
+    tmp->destruct();
   }
 
   // Remove the existing null check; use a new implicit null check instead.
@@ -449,7 +449,7 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
     old_tst->set_req(i3, NULL);
     if (in->outcnt() == 0) {
       // Remove dead input node
-      in->disconnect_inputs(C);
+      in->disconnect_inputs(NULL, C);
       block->find_remove(in);
     }
   }
@@ -632,7 +632,7 @@ Node* PhaseCFG::select(
     cand_cnt++;
     if (choice < n_choice ||
         (choice == n_choice &&
-         ((StressLCM && C->randomized_select(cand_cnt)) ||
+         ((StressLCM && Compile::randomized_select(cand_cnt)) ||
           (!StressLCM &&
            (latency < n_latency ||
             (latency == n_latency &&
@@ -686,7 +686,6 @@ void PhaseCFG::adjust_register_pressure(Node* n, Block* block, intptr_t* recalc_
         case Op_StoreP:
         case Op_StoreN:
         case Op_StoreVector:
-        case Op_StoreVectorScatter:
         case Op_StoreNKlass:
           for (uint k = 1; k < m->req(); k++) {
             Node *in = m->in(k);
@@ -1370,7 +1369,7 @@ void PhaseCFG::call_catch_cleanup(Block* block) {
 
   // Remove the now-dead cloned ops
   for(uint i3 = beg; i3 < end; i3++ ) {
-    block->get_node(beg)->disconnect_inputs(C);
+    block->get_node(beg)->disconnect_inputs(NULL, C);
     block->remove_node(beg);
   }
 
@@ -1383,7 +1382,7 @@ void PhaseCFG::call_catch_cleanup(Block* block) {
       Node *n = sb->get_node(j);
       if (n->outcnt() == 0 &&
           (!n->is_Proj() || n->as_Proj()->in(0)->outcnt() == 1) ){
-        n->disconnect_inputs(C);
+        n->disconnect_inputs(NULL, C);
         sb->remove_node(j);
         new_cnt--;
       }

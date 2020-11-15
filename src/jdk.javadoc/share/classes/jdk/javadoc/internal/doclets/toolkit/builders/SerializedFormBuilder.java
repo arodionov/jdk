@@ -36,8 +36,8 @@ import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 
+import com.sun.source.doctree.DocTree;
 import com.sun.source.doctree.SerialFieldTree;
-import com.sun.source.doctree.SerialTree;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.DocletException;
 import jdk.javadoc.internal.doclets.toolkit.SerializedFormWriter;
@@ -472,7 +472,10 @@ public class SerializedFormBuilder extends AbstractBuilder {
         // element.)
         SortedSet<SerialFieldTree> tags = new TreeSet<>(utils.comparators.makeSerialFieldTreeComparator());
         // sort the elements
-        tags.addAll(utils.getSerialFieldTrees(field));
+        for (DocTree dt : utils.getSerialFieldTrees(field)) {
+            SerialFieldTree st = (SerialFieldTree) dt;
+            tags.add(st);
+        }
 
         CommentHelper ch = utils.getCommentHelper(field);
         for (SerialFieldTree tag : tags) {
@@ -571,7 +574,7 @@ public class SerializedFormBuilder extends AbstractBuilder {
         if (utils.isEnum(element)) {
             return false;
         }
-        List<? extends SerialTree> serial = utils.getSerialTrees(element);
+        List<? extends DocTree> serial = utils.getSerialTrees(element);
         if (!serial.isEmpty()) {
             CommentHelper ch = utils.getCommentHelper(element);
             String serialtext = Utils.toLowerCase(ch.getText(serial.get(0)));

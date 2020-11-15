@@ -63,15 +63,13 @@ public class ActionListenerCalledTwiceTest {
         }
 
         try {
-            Robot robot = new Robot();
-            robot.setAutoDelay(100);
 
             System.setProperty("apple.laf.useScreenMenuBar", "true");
             SwingUtilities.invokeAndWait(
                     ActionListenerCalledTwiceTest::createAndShowGUI);
 
-            robot.waitForIdle();
-            robot.delay(1000);
+            Robot robot = new Robot();
+            robot.setAutoDelay(100);
 
             testForTwice(robot, "");
 
@@ -101,7 +99,6 @@ public class ActionListenerCalledTwiceTest {
         frame.setJMenuBar(bar);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.pack();
-        frame.setLocationRelativeTo(null);
         frame.setVisible(true);
     }
 

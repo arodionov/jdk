@@ -25,7 +25,6 @@
 
 package java.util.zip;
 
-import java.lang.ref.Reference;
 import java.nio.ByteBuffer;
 import sun.nio.ch.DirectBuffer;
 
@@ -97,12 +96,8 @@ public class Adler32 implements Checksum {
         int rem = limit - pos;
         if (rem <= 0)
             return;
-        if (buffer.isDirect()) {
-            try {
-                adler = updateByteBuffer(adler, ((DirectBuffer)buffer).address(), pos, rem);
-            } finally {
-                Reference.reachabilityFence(buffer);
-            }
+        if (buffer instanceof DirectBuffer) {
+            adler = updateByteBuffer(adler, ((DirectBuffer)buffer).address(), pos, rem);
         } else if (buffer.hasArray()) {
             adler = updateBytes(adler, buffer.array(), pos + buffer.arrayOffset(), rem);
         } else {

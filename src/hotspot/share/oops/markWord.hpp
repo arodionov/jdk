@@ -286,8 +286,16 @@ class markWord {
   bool has_displaced_mark_helper() const {
     return ((value() & unlocked_value) == 0);
   }
-  markWord displaced_mark_helper() const;
-  void set_displaced_mark_helper(markWord m) const;
+  markWord displaced_mark_helper() const {
+    assert(has_displaced_mark_helper(), "check");
+    uintptr_t ptr = (value() & ~monitor_value);
+    return *(markWord*)ptr;
+  }
+  void set_displaced_mark_helper(markWord m) const {
+    assert(has_displaced_mark_helper(), "check");
+    uintptr_t ptr = (value() & ~monitor_value);
+    ((markWord*)ptr)->_value = m._value;
+  }
   markWord copy_set_hash(intptr_t hash) const {
     uintptr_t tmp = value() & (~hash_mask_in_place);
     tmp |= ((hash & hash_mask) << hash_shift);
@@ -347,7 +355,7 @@ class markWord {
   static inline markWord prototype_for_klass(const Klass* klass);
 
   // Debugging
-  void print_on(outputStream* st, bool print_monitor_info = true) const;
+  void print_on(outputStream* st) const;
 
   // Prepare address of oop for placement into mark
   inline static markWord encode_pointer_as_mark(void* p) { return from_pointer(p).set_marked(); }

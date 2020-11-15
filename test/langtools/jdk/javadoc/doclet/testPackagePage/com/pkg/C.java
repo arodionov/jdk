@@ -23,5 +23,4 @@
 
 package com.pkg;
 
-@Deprecated
 public class C {}

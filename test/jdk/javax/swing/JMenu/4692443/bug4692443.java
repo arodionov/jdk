@@ -50,7 +50,6 @@ public class bug4692443 {
             pass = new PassedListener();
             passed = false;
             Robot robo = new Robot();
-            robo.setAutoDelay(100);
 
             SwingUtilities.invokeAndWait(new Runnable() {
                 public void run() {
@@ -59,9 +58,9 @@ public class bug4692443 {
             });
 
             robo.waitForIdle();
-            robo.delay(1000);
 
             int altKey = java.awt.event.KeyEvent.VK_ALT;
+            robo.setAutoDelay(100);
             Util.hitMnemonics(robo, KeyEvent.VK_F); // Enter File menu
             robo.keyPress(KeyEvent.VK_S);  // Enter submenu
             robo.keyRelease(KeyEvent.VK_S);
@@ -79,7 +78,6 @@ public class bug4692443 {
              if (mainFrame != null) SwingUtilities.invokeAndWait(() -> mainFrame.dispose());
         }
     }
-
 
     private static void createAndShowGUI() {
         mainFrame = new JFrame("Bug 4692443");
@@ -111,7 +109,7 @@ public class bug4692443 {
         mainFrame.setJMenuBar(mbar);
 
         mainFrame.setSize(200, 200);
-        mainFrame.setLocationRelativeTo(null);
+        mainFrame.setLocation(200, 200);
         mainFrame.setVisible(true);
         mainFrame.toFront();
     }

@@ -72,7 +72,7 @@ import static jdk.internal.logger.SurrogateLogger.isFilteredFrame;
 
 public class LogRecord implements java.io.Serializable {
     private static final AtomicLong globalSequenceNumber
-        = new AtomicLong();
+        = new AtomicLong(0);
 
     /**
      * Logging message level

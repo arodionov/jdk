@@ -105,20 +105,20 @@ public class TestBindingVariable extends JavacTestingAbstractProcessor implement
         }
         @Override
         public Void visitBindingPattern(BindingPatternTree node, Void p) {
-            handleTreeAsBindingVar(new TreePath(getCurrentPath(), node.getVariable()));
+            handleCurrentTreeAsBindingVar();
             return super.visitBindingPattern(node, p);
         }
 
         @Override
         public Void visitIdentifier(IdentifierTree node, Void p) {
             if (node.getName().contentEquals("bindingVar")) {
-                handleTreeAsBindingVar(getCurrentPath());
+                handleCurrentTreeAsBindingVar();
             }
             return super.visitIdentifier(node, p);
         }
 
-        private void handleTreeAsBindingVar(TreePath tp) {
-           Element element = trees.getElement(tp);
+        private void handleCurrentTreeAsBindingVar() {
+           Element element = trees.getElement(getCurrentPath());
 
            System.out.println("Name: " + element.getSimpleName() +
                               "\tKind: " + element.getKind());

@@ -33,7 +33,6 @@ import javax.lang.model.type.TypeMirror;
 
 import com.sun.source.doctree.DocTree;
 
-import com.sun.source.doctree.SerialTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
@@ -166,7 +165,7 @@ public class HtmlSerialFieldWriter extends FieldWriterImpl
         if (!utils.getFullBody(field).isEmpty()) {
             writer.addInlineComment(field, contentTree);
         }
-        List<? extends SerialTree> tags = utils.getSerialTrees(field);
+        List<? extends DocTree> tags = utils.getBlockTags(field, DocTree.Kind.SERIAL);
         if (!tags.isEmpty()) {
             writer.addInlineComment(field, tags.get(0), contentTree);
         }

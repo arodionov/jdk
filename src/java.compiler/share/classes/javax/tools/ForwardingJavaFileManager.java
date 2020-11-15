@@ -180,6 +180,7 @@ public class ForwardingJavaFileManager<M extends JavaFileManager> implements Jav
 
     /**
      * @since 9
+     * @spec JPMS
      */
     @Override
     public Location getLocationForModule(Location location, String moduleName) throws IOException {
@@ -188,6 +189,7 @@ public class ForwardingJavaFileManager<M extends JavaFileManager> implements Jav
 
     /**
      * @since 9
+     * @spec JPMS
      */
     @Override
     public Location getLocationForModule(Location location, JavaFileObject fo) throws IOException {
@@ -196,6 +198,7 @@ public class ForwardingJavaFileManager<M extends JavaFileManager> implements Jav
 
     /**
      * @since 9
+     * @spec JPMS
      */
     @Override
     public <S> ServiceLoader<S> getServiceLoader(Location location, Class<S> service) throws  IOException {
@@ -204,6 +207,7 @@ public class ForwardingJavaFileManager<M extends JavaFileManager> implements Jav
 
     /**
      * @since 9
+     * @spec JPMS
      */
     @Override
     public String inferModuleName(Location location) throws IOException {
@@ -212,6 +216,7 @@ public class ForwardingJavaFileManager<M extends JavaFileManager> implements Jav
 
     /**
      * @since 9
+     * @spec JPMS
      */
     @Override
     public Iterable<Set<Location>> listLocationsForModules(Location location) throws IOException {

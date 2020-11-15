@@ -29,36 +29,29 @@
  * @bug 8146310
  * @summary [macosx] setDefaultMenuBar does not initialize screen menu bar
  * @author Alan Snyder
- * @library /test/lib
  * @run main/othervm TestNoScreenMenuBar
  * @requires (os.family == "mac")
  */
 
 import java.awt.AWTException;
 import java.awt.Desktop;
-import java.awt.Frame;
-import java.awt.Menu;
-import java.awt.MenuBar;
 import java.awt.Robot;
 import java.awt.event.InputEvent;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
-
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.SwingUtilities;
 
-import jdk.test.lib.process.ProcessTools;
-
 public class TestNoScreenMenuBar
 {
     static TestNoScreenMenuBar theTest;
     private Robot robot;
-    private Process process;
+    private boolean isApplicationOpened;
     private boolean isActionPerformed;
 
-    public TestNoScreenMenuBar()
+    public TestNoScreenMenuBar(String[] args)
     {
         try {
             robot = new Robot();
@@ -67,9 +60,11 @@ public class TestNoScreenMenuBar
             throw new RuntimeException(ex);
         }
 
-        // activate another java application
-        openOtherApplication();
-        robot.delay(2000);
+        if (!(args.length > 0 && args[0].equals("baseline"))) {
+            // activate another application
+            openOtherApplication();
+            robot.delay(500);
+        }
 
         // The failure mode is installing the default menu bar while the application is inactive
         Desktop desktop = Desktop.getDesktop();
@@ -139,21 +134,23 @@ public class TestNoScreenMenuBar
     }
 
     private void openOtherApplication() {
-        process = execute();
+        String[] cmd = { "/usr/bin/open", "/Applications/System Preferences.app" };
+        execute(cmd);
+        isApplicationOpened = true;
     }
 
     private void closeOtherApplication() {
-        if (process != null) {
-            process.destroyForcibly();
+        if (isApplicationOpened) {
+            String[] cmd = { "/usr/bin/osascript", "-e", "tell application \"System Preferences\" to close window 1" };
+            execute(cmd);
         }
     }
 
-    private Process execute() {
+    private void execute(String[] cmd) {
         try {
-            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-                    TestNoScreenMenuBar.class.getSimpleName(), "mark");
-            return ProcessTools.startProcess("Other frame", pb);
-        } catch (IOException ex) {
+            Process p = Runtime.getRuntime().exec(cmd);
+            p.waitFor();
+        } catch (IOException | InterruptedException ex) {
             throw new RuntimeException("Unable to execute command");
         }
     }
@@ -174,20 +171,10 @@ public class TestNoScreenMenuBar
             System.out.println("This test is for MacOS only. Automatically passed on other platforms.");
             return;
         }
-        if (args.length != 0) {
-            Frame frame = new Frame();
-            MenuBar mb = new MenuBar();
-            mb.add(new Menu("Hello"));
-            frame.setMenuBar(mb);
-            frame.setSize(300, 300);
-            frame.setLocationRelativeTo(null);
-            frame.setVisible(true);
-            frame.toFront();
-            return;
-        }
+
         System.setProperty("apple.laf.useScreenMenuBar", "true");
         try {
-            runSwing(() -> theTest = new TestNoScreenMenuBar());
+            runSwing(() -> theTest = new TestNoScreenMenuBar(args));
             theTest.performMenuItemTest();
         } finally {
             if (theTest != null) {

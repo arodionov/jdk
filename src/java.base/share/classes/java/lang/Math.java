@@ -99,6 +99,7 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  * occurs only with a specific minimum or maximum value and
  * should be checked against the minimum or maximum as appropriate.
  *
+ * @author  unascribed
  * @author  Joseph D. Darcy
  * @since   1.0
  */

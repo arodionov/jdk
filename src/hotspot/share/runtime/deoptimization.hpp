@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,6 @@ template<class E> class GrowableArray;
 
 class Deoptimization : AllStatic {
   friend class VMStructs;
-  friend class EscapeBarrier;
 
  public:
   // What condition caused the deoptimization?
@@ -135,8 +134,7 @@ class Deoptimization : AllStatic {
     Unpack_exception            = 1, // exception is pending
     Unpack_uncommon_trap        = 2, // redo last byte code (C2 only)
     Unpack_reexecute            = 3, // reexecute bytecode (C1 only)
-    Unpack_none                 = 4, // not deoptimizing the frame, just reallocating/relocking for JVMTI
-    Unpack_LIMIT                = 5
+    Unpack_LIMIT                = 4
   };
 
 #if INCLUDE_JVMCI
@@ -154,9 +152,6 @@ class Deoptimization : AllStatic {
   // Revoke biased locks at deopt.
   static void revoke_from_deopt_handler(JavaThread* thread, frame fr, RegisterMap* map);
 
-  static void revoke_for_object_deoptimization(JavaThread* deoptee_thread, frame fr,
-                                               RegisterMap* map, JavaThread* thread);
-
  public:
   // Deoptimizes a frame lazily. Deopt happens on return to the frame.
   static void deoptimize(JavaThread* thread, frame fr, DeoptReason reason = Reason_constraint);
@@ -171,11 +166,6 @@ class Deoptimization : AllStatic {
   static void deoptimize_single_frame(JavaThread* thread, frame fr, DeoptReason reason);
 
 #if COMPILER2_OR_JVMCI
-  // Deoptimize objects, that is reallocate and relock them, just before they
-  // escape through JVMTI.  The given vframes cover one physical frame.
-  static bool deoptimize_objects_internal(JavaThread* thread, GrowableArray<compiledVFrame*>* chunk,
-                                          bool& realloc_failures);
-
  public:
 
   // Support for restoring non-escaping objects
@@ -183,8 +173,7 @@ class Deoptimization : AllStatic {
   static void reassign_type_array_elements(frame* fr, RegisterMap* reg_map, ObjectValue* sv, typeArrayOop obj, BasicType type);
   static void reassign_object_array_elements(frame* fr, RegisterMap* reg_map, ObjectValue* sv, objArrayOop obj);
   static void reassign_fields(frame* fr, RegisterMap* reg_map, GrowableArray<ScopeValue*>* objects, bool realloc_failures, bool skip_internal);
-  static bool relock_objects(JavaThread* thread, GrowableArray<MonitorInfo*>* monitors,
-                             JavaThread* deoptee_thread, frame& fr, int exec_mode, bool realloc_failures);
+  static void relock_objects(GrowableArray<MonitorInfo*>* monitors, JavaThread* thread, bool realloc_failures);
   static void pop_frames_failed_reallocs(JavaThread* thread, vframeArray* array);
   NOT_PRODUCT(static void print_objects(GrowableArray<ScopeValue*>* objects, bool realloc_failures);)
 #endif // COMPILER2_OR_JVMCI
@@ -475,7 +464,6 @@ class Deoptimization : AllStatic {
  public:
   static void update_method_data_from_interpreter(MethodData* trap_mdo, int trap_bci, int reason);
 };
-
 
 class DeoptimizationMarker : StackObj {  // for profiling
   static bool _is_active;

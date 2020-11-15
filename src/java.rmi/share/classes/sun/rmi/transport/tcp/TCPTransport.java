@@ -115,7 +115,7 @@ public class TCPTransport extends Transport {
             });
 
     /** total connections handled */
-    private static final AtomicInteger connectionCount = new AtomicInteger();
+    private static final AtomicInteger connectionCount = new AtomicInteger(0);
 
     /** client host for the current thread's connection */
     private static final ThreadLocal<ConnectionHandler>

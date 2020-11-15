@@ -24,7 +24,6 @@
 /**
  * @test
  * @summary Stress test that reaches the process limit for thread count, or time limit.
- * @key stress
  * @run main ThreadCountLimit
  */
 

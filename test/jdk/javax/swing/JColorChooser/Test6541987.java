@@ -42,33 +42,24 @@ import javax.swing.SwingUtilities;
 
 public class Test6541987 implements Runnable {
     private static Robot robot;
-    private static JFrame frame;
 
-    public static void main(String[] args) throws Exception {
-        try {
-            robot = new Robot();
-            robot.setAutoDelay(100);
-            // test escape after selection
-            start();
-            click(KeyEvent.VK_ESCAPE);
-            robot.waitForIdle();
-            // test double escape after editing
-            start();
-            click(KeyEvent.VK_1);
-            click(KeyEvent.VK_0);
-            click(KeyEvent.VK_ESCAPE);
-            click(KeyEvent.VK_ESCAPE);
-            robot.waitForIdle();
-            robot.delay(500);
-            // all windows should be closed
-            for (Window window : Window.getWindows()) {
-                if (window.isVisible()) {
-                    throw new Error("found visible window: " + window.getName());
-                }
-            }
-        } finally {
-            if (frame != null) {
-                SwingUtilities.invokeAndWait(frame::dispose);
+    public static void main(String[] args) throws AWTException {
+        robot = new Robot();
+        // test escape after selection
+        start();
+        click(KeyEvent.VK_ESCAPE);
+        robot.waitForIdle();
+        // test double escape after editing
+        start();
+        click(KeyEvent.VK_1);
+        click(KeyEvent.VK_0);
+        click(KeyEvent.VK_ESCAPE);
+        click(KeyEvent.VK_ESCAPE);
+        robot.waitForIdle();
+        // all windows should be closed
+        for (Window window : Window.getWindows()) {
+            if (window.isVisible()) {
+                throw new Error("found visible window: " + window.getName());
             }
         }
     }
@@ -94,8 +85,7 @@ public class Test6541987 implements Runnable {
 
     public void run() {
         String title = getClass().getName();
-        frame = new JFrame(title);
-        frame.setLocationRelativeTo(null);
+        JFrame frame = new JFrame(title);
         frame.setVisible(true);
 
         Color color = JColorChooser.showDialog(frame, title, Color.BLACK);

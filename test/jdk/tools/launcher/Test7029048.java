@@ -26,21 +26,9 @@
  * @bug 7029048 8217340 8217216
  * @summary Ensure that the launcher defends against user settings of the
  *          LD_LIBRARY_PATH environment variable on Unixes
- * @requires os.family != "windows" & os.family != "mac" & !vm.musl & os.family != "aix"
  * @library /test/lib
  * @compile -XDignore.symbol.file ExecutionEnvironment.java Test7029048.java
- * @run main/othervm -DexpandedLdLibraryPath=false Test7029048
- */
-
-/**
- * @test
- * @bug 7029048 8217340 8217216
- * @summary Ensure that the launcher defends against user settings of the
- *          LD_LIBRARY_PATH environment variable on Unixes
- * @requires os.family == "aix" | vm.musl
- * @library /test/lib
- * @compile -XDignore.symbol.file ExecutionEnvironment.java Test7029048.java
- * @run main/othervm -DexpandedLdLibraryPath=true Test7029048
+ * @run main Test7029048
  */
 
 import java.io.File;
@@ -70,9 +58,6 @@ public class Test7029048 extends TestHelper {
 
     private static final File dstClientDir = new File(dstLibDir, "client");
     private static final File dstClientLibjvm = new File(dstClientDir, LIBJVM);
-
-    static final boolean IS_EXPANDED_LD_LIBRARY_PATH =
-            Boolean.getBoolean("expandedLdLibraryPath");
 
     static String getValue(String name, List<String> in) {
         for (String x : in) {
@@ -170,7 +155,7 @@ public class Test7029048 extends TestHelper {
                     }
 
                     desc = "LD_LIBRARY_PATH should not be set (no libjvm.so)";
-                    if (IS_EXPANDED_LD_LIBRARY_PATH) {
+                    if (TestHelper.isAIX) {
                         printSkipMessage(desc);
                         continue;
                     }
@@ -180,7 +165,7 @@ public class Test7029048 extends TestHelper {
                         recursiveDelete(dstLibDir);
                     }
                     desc = "LD_LIBRARY_PATH should not be set (no directory)";
-                    if (IS_EXPANDED_LD_LIBRARY_PATH) {
+                    if (TestHelper.isAIX) {
                         printSkipMessage(desc);
                         continue;
                     }
@@ -208,11 +193,15 @@ public class Test7029048 extends TestHelper {
     }
 
     private static void printSkipMessage(String description) {
-        System.out.printf("Skipping test case '%s' because the Aix and musl launchers" +
-                          " add the paths in any case.%n", description);
+        System.out.printf("Skipping test case '%s' because the Aix launcher" +
+                          " adds the paths in any case.%n", description);
     }
 
     public static void main(String... args) throws Exception {
+        if (TestHelper.isWindows || TestHelper.isMacOSX) {
+            System.out.println("Note: applicable on neither Windows nor MacOSX");
+            return;
+        }
         if (!TestHelper.haveServerVM) {
             System.out.println("Note: test relies on server vm, not found, exiting");
             return;

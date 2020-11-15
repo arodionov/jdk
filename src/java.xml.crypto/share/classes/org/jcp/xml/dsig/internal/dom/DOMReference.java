@@ -500,44 +500,38 @@ public final class DOMReference extends DOMStructure
                 }
 
                 boolean secVal = Utils.secureValidation(context);
-                try {
-                    xi.setSecureValidation(secVal);
-                    if (context instanceof XMLSignContext && c14n11
-                            && !xi.isOctetStream() && !xi.isOutputStreamSet()) {
-                        TransformService spi = null;
-                        if (provider == null) {
-                            spi = TransformService.getInstance(c14nalg, "DOM");
-                        } else {
-                            try {
-                                spi = TransformService.getInstance(c14nalg, "DOM", provider);
-                            } catch (NoSuchAlgorithmException nsae) {
-                                spi = TransformService.getInstance(c14nalg, "DOM");
-                            }
-                        }
-
-                        DOMTransform t = new DOMTransform(spi);
-                        Element transformsElem = null;
-                        String dsPrefix = DOMUtils.getSignaturePrefix(context);
-                        if (allTransforms.isEmpty()) {
-                            transformsElem = DOMUtils.createElement(
-                                    refElem.getOwnerDocument(),
-                                    "Transforms", XMLSignature.XMLNS, dsPrefix);
-                            refElem.insertBefore(transformsElem,
-                                    DOMUtils.getFirstChildElement(refElem));
-                        } else {
-                            transformsElem = DOMUtils.getFirstChildElement(refElem);
-                        }
-                        t.marshal(transformsElem, dsPrefix,
-                                (DOMCryptoContext) context);
-                        allTransforms.add(t);
-                        xi.updateOutputStream(os, true);
+                xi.setSecureValidation(secVal);
+                if (context instanceof XMLSignContext && c14n11
+                    && !xi.isOctetStream() && !xi.isOutputStreamSet()) {
+                    TransformService spi = null;
+                    if (provider == null) {
+                        spi = TransformService.getInstance(c14nalg, "DOM");
                     } else {
-                        xi.updateOutputStream(os);
+                        try {
+                            spi = TransformService.getInstance(c14nalg, "DOM", provider);
+                        } catch (NoSuchAlgorithmException nsae) {
+                            spi = TransformService.getInstance(c14nalg, "DOM");
+                        }
                     }
-                } finally {
-                    if(xi.getOctetStreamReal() != null) {
-                        xi.getOctetStreamReal().close();
+
+                    DOMTransform t = new DOMTransform(spi);
+                    Element transformsElem = null;
+                    String dsPrefix = DOMUtils.getSignaturePrefix(context);
+                    if (allTransforms.isEmpty()) {
+                        transformsElem = DOMUtils.createElement(
+                            refElem.getOwnerDocument(),
+                            "Transforms", XMLSignature.XMLNS, dsPrefix);
+                        refElem.insertBefore(transformsElem,
+                            DOMUtils.getFirstChildElement(refElem));
+                    } else {
+                        transformsElem = DOMUtils.getFirstChildElement(refElem);
                     }
+                    t.marshal(transformsElem, dsPrefix,
+                              (DOMCryptoContext)context);
+                    allTransforms.add(t);
+                    xi.updateOutputStream(os, true);
+                } else {
+                    xi.updateOutputStream(os);
                 }
             }
             os.flush();

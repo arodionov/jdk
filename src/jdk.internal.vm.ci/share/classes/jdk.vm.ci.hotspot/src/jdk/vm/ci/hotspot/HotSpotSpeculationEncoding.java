@@ -29,7 +29,6 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 
-import jdk.vm.ci.common.JVMCIError;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaType;
 import jdk.vm.ci.meta.SpeculationLog.SpeculationReasonEncoding;
@@ -37,24 +36,10 @@ import jdk.vm.ci.meta.SpeculationLog.SpeculationReasonEncoding;
 /**
  * Implements a {@link SpeculationReasonEncoding} that {@linkplain #getByteArray() produces} a byte
  * array. Data is added via a {@link DataOutputStream}. When producing the final byte array, if the
- * total length of data exceeds {@value HotSpotSpeculationEncoding#MAX_LENGTH}, then a SHA-1 digest
- * of the data is produced instead.
+ * total length of data exceeds the length of a SHA-1 digest and a SHA-1 digest algorithm is
+ * available, then a SHA-1 digest of the data is produced instead.
  */
 final class HotSpotSpeculationEncoding extends ByteArrayOutputStream implements SpeculationReasonEncoding {
-
-    /**
-     * Number of bits used for the length of an encoded speculation. The bit size of 5 is chosen to
-     * accommodate specifying // the length of a SHA-1 digest (i.e., 20 bytes).
-     */
-    // Also defined in C++ JVMCINMethodData class - keep in sync.
-    static final int LENGTH_BITS = 5;
-
-    /**
-     * The maximum length of an encoded speculation.
-     */
-    static final int MAX_LENGTH = (1 << LENGTH_BITS) - 1;
-
-    static final int LENGTH_MASK = MAX_LENGTH;
 
     private DataOutputStream dos = new DataOutputStream(this);
     private byte[] result;
@@ -175,7 +160,7 @@ final class HotSpotSpeculationEncoding extends ByteArrayOutputStream implements 
      * time.
      */
     private static final boolean SHA1_IS_CLONEABLE;
-    private static final int SHA1_LENGTH = 20;
+    private static final int SHA1_LENGTH;
 
     static {
         MessageDigest sha1 = null;
@@ -186,14 +171,13 @@ final class HotSpotSpeculationEncoding extends ByteArrayOutputStream implements 
             sha1IsCloneable = true;
         } catch (NoSuchAlgorithmException e) {
             // Should never happen given that SHA-1 is mandated in a
-            // compliant Java platform implementation.
-            throw new JVMCIError(e);
+            // compliant Java platform implementation. However, be
+            // conservative and fall back to not using a digest.
         } catch (CloneNotSupportedException e) {
         }
         SHA1 = sha1;
         SHA1_IS_CLONEABLE = sha1IsCloneable;
-        assert SHA1.getDigestLength() == SHA1_LENGTH;
-        assert SHA1_LENGTH < MAX_LENGTH;
+        SHA1_LENGTH = SHA1 == null ? 20 : SHA1.getDigestLength();
     }
 
     /**
@@ -202,7 +186,7 @@ final class HotSpotSpeculationEncoding extends ByteArrayOutputStream implements 
      */
     byte[] getByteArray() {
         if (result == null) {
-            if (count > MAX_LENGTH) {
+            if (SHA1 != null && count > SHA1_LENGTH) {
                 try {
                     MessageDigest md = SHA1_IS_CLONEABLE ? (MessageDigest) SHA1.clone() : MessageDigest.getInstance("SHA-1");
                     md.update(buf, 0, count);

@@ -24,7 +24,7 @@
 /*
   @test
   @key headful
-  @bug 8017472 8211999
+  @bug 8017472
   @summary MouseEvent has wrong coordinates when using multiple monitors
   @run main MouseEventTest
  */

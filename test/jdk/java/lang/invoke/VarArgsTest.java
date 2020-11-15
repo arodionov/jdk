@@ -69,7 +69,8 @@ public class VarArgsTest {
         assertEquals("[two, too]", asListWithVarargs.invoke("two", "too").toString());
     }
 
-    @Test(expectedExceptions = { IllegalArgumentException.class })
+    @Test
+    @ExpectedExceptions(IllegalArgumentException.class)
     public void testWithVarargsIAE() throws Throwable {
         MethodHandle lenMH = publicLookup()
             .findVirtual(String.class, "length", methodType(int.class));

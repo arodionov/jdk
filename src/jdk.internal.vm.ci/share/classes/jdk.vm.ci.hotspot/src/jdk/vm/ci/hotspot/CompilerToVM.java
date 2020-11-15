@@ -977,10 +977,9 @@ final class CompilerToVM {
     native long getCurrentJavaThread();
 
     /**
-     * @param name name of current thread if in a native image otherwise {@code null}
      * @see HotSpotJVMCIRuntime#attachCurrentThread
      */
-    native boolean attachCurrentThread(byte[] name, boolean asDaemon);
+    native boolean attachCurrentThread(boolean asDaemon);
 
     /**
      * @see HotSpotJVMCIRuntime#detachCurrentThread()

@@ -2164,7 +2164,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         @DefinedBy(Api.COMPILER_TREE)
         public Kind getKind() { return Kind.INSTANCE_OF; }
         @DefinedBy(Api.COMPILER_TREE)
-        public JCTree getType() { return pattern instanceof JCPattern ? pattern.hasTag(BINDINGPATTERN) ? ((JCBindingPattern) pattern).var.vartype : null : pattern; }
+        public JCTree getType() { return pattern instanceof JCPattern ? pattern.hasTag(BINDINGPATTERN) ? ((JCBindingPattern) pattern).vartype : null : pattern; }
 
         @Override @DefinedBy(Api.COMPILER_TREE)
         public JCPattern getPattern() {
@@ -2188,19 +2188,31 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
      */
     public static abstract class JCPattern extends JCTree
             implements PatternTree {
+        public JCExpression constExpression() {
+            return null;
+        }
     }
 
     public static class JCBindingPattern extends JCPattern
             implements BindingPatternTree {
-        public JCVariableDecl var;
+        public Name name;
+        public BindingSymbol symbol;
+        public JCTree vartype;
 
-        protected JCBindingPattern(JCVariableDecl var) {
-            this.var = var;
+        protected JCBindingPattern(Name name, BindingSymbol symbol, JCTree vartype) {
+            this.name = name;
+            this.symbol = symbol;
+            this.vartype = vartype;
+        }
+
+        @DefinedBy(Api.COMPILER_TREE)
+        public Name getBinding() {
+            return name;
         }
 
         @Override @DefinedBy(Api.COMPILER_TREE)
-        public VariableTree getVariable() {
-            return var;
+        public Tree getType() {
+            return vartype;
         }
 
         @Override
@@ -3199,7 +3211,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         JCBinary Binary(Tag opcode, JCExpression lhs, JCExpression rhs);
         JCTypeCast TypeCast(JCTree expr, JCExpression type);
         JCInstanceOf TypeTest(JCExpression expr, JCTree clazz);
-        JCBindingPattern BindingPattern(JCVariableDecl var);
+        JCBindingPattern BindingPattern(Name name, JCTree vartype);
         JCArrayAccess Indexed(JCExpression indexed, JCExpression index);
         JCFieldAccess Select(JCExpression selected, Name selector);
         JCIdent Ident(Name idname);

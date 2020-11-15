@@ -40,58 +40,49 @@ public class Test6256140 {
 
     private final static String initialText = "value";
     private final static JLabel toolTipLabel = new JLabel("tip");
-    private static JFrame frame;
 
     public static void main(String[] args) throws Exception {
-        try {
-            Robot robot = new Robot();
-            robot.setAutoDelay(100);
 
-            SwingUtilities.invokeAndWait(new Runnable() {
-                public void run() {
-                    createAndShowGUI();
-                }
-            });
-            robot.waitForIdle();
-            robot.delay(1000);
+        Robot robot = new Robot();
+        robot.setAutoDelay(10);
 
-            Point point = ft.getLocationOnScreen();
-            robot.mouseMove(point.x, point.y);
-            robot.waitForIdle();
-            robot.mouseMove(point.x + 3, point.y + 3);
-            robot.waitForIdle();
-
-            robot.keyPress(KeyEvent.VK_A);
-            robot.keyRelease(KeyEvent.VK_A);
-            robot.waitForIdle();
-
-            if (!isTooltipShowning()) {
-                throw new RuntimeException("Tooltip is not shown");
+        SwingUtilities.invokeAndWait(new Runnable() {
+            public void run() {
+                createAndShowGUI();
             }
+        });
+        robot.waitForIdle();
 
-            robot.keyPress(KeyEvent.VK_ESCAPE);
-            robot.keyRelease(KeyEvent.VK_ESCAPE);
-            robot.waitForIdle();
+        Point point = ft.getLocationOnScreen();
+        robot.mouseMove(point.x, point.y);
+        robot.mouseMove(point.x + 3, point.y + 3);
 
-            if (isTooltipShowning()) {
-                throw new RuntimeException("Tooltip must be hidden now");
-            }
+        robot.keyPress(KeyEvent.VK_A);
+        robot.keyRelease(KeyEvent.VK_A);
+        robot.waitForIdle();
 
-            if (isTextEqual()) {
-                throw new RuntimeException("FormattedTextField must *not* cancel the updated value this time");
-            }
+        if (!isTooltipShowning()) {
+            throw new RuntimeException("Tooltip is not shown");
+        }
 
-            robot.keyPress(KeyEvent.VK_ESCAPE);
-            robot.keyRelease(KeyEvent.VK_ESCAPE);
-            robot.waitForIdle();
+        robot.keyPress(KeyEvent.VK_ESCAPE);
+        robot.keyRelease(KeyEvent.VK_ESCAPE);
+        robot.waitForIdle();
 
-            if (!isTextEqual()) {
-                throw new RuntimeException("FormattedTextField must cancel the updated value");
-            }
-        } finally {
-            if (frame != null) {
-                SwingUtilities.invokeAndWait(frame::dispose);
-            }
+        if (isTooltipShowning()) {
+            throw new RuntimeException("Tooltip must be hidden now");
+        }
+
+        if (isTextEqual()) {
+            throw new RuntimeException("FormattedTextField must *not* cancel the updated value this time");
+        }
+
+        robot.keyPress(KeyEvent.VK_ESCAPE);
+        robot.keyRelease(KeyEvent.VK_ESCAPE);
+        robot.waitForIdle();
+
+        if (!isTextEqual()) {
+            throw new RuntimeException("FormattedTextField must cancel the updated value");
         }
     }
 
@@ -125,7 +116,7 @@ public class Test6256140 {
         ToolTipManager.sharedInstance().setDismissDelay(Integer.MAX_VALUE);
         ToolTipManager.sharedInstance().setInitialDelay(0);
 
-        frame = new JFrame();
+        final JFrame frame = new JFrame();
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setLayout(new FlowLayout());
 

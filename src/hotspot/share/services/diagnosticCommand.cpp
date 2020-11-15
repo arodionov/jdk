@@ -110,9 +110,6 @@ void DCmdRegistrant::register_dcmds(){
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CompileQueueDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CodeListDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CodeCacheDCmd>(full_export, true, false));
-#ifdef LINUX
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<PerfMapDCmd>(full_export, true, false));
-#endif // LINUX
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<TouchedMethodsDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CodeHeapAnalyticsDCmd>(full_export, true, false));
 
@@ -279,7 +276,7 @@ void SetVMFlagDCmd::execute(DCmdSource source, TRAPS) {
   }
 
   FormatBuffer<80> err_msg("%s", "");
-  int ret = WriteableFlags::set_flag(_flag.value(), val, JVMFlagOrigin::MANAGEMENT, err_msg);
+  int ret = WriteableFlags::set_flag(_flag.value(), val, JVMFlag::MANAGEMENT, err_msg);
 
   if (ret != JVMFlag::SUCCESS) {
     output()->print_cr("%s", err_msg.buffer());
@@ -304,7 +301,6 @@ void JVMTIDataDumpDCmd::execute(DCmdSource source, TRAPS) {
 }
 
 #if INCLUDE_SERVICES
-#if INCLUDE_JVMTI
 JVMTIAgentLoadDCmd::JVMTIAgentLoadDCmd(outputStream* output, bool heap) :
                                        DCmdWithParser(output, heap),
   _libpath("library path", "Absolute path of the JVMTI agent to load.",
@@ -364,7 +360,6 @@ int JVMTIAgentLoadDCmd::num_arguments() {
     return 0;
   }
 }
-#endif // INCLUDE_JVMTI
 #endif // INCLUDE_SERVICES
 
 void PrintSystemPropertiesDCmd::execute(DCmdSource source, TRAPS) {
@@ -897,12 +892,6 @@ void CodeListDCmd::execute(DCmdSource source, TRAPS) {
 void CodeCacheDCmd::execute(DCmdSource source, TRAPS) {
   CodeCache::print_layout(output());
 }
-
-#ifdef LINUX
-void PerfMapDCmd::execute(DCmdSource source, TRAPS) {
-  CodeCache::write_perf_map();
-}
-#endif // LINUX
 
 //---<  BEGIN  >--- CodeHeap State Analytics.
 CodeHeapAnalyticsDCmd::CodeHeapAnalyticsDCmd(outputStream* output, bool heap) :

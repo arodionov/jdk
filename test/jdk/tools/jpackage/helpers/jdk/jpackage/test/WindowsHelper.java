@@ -110,12 +110,10 @@ public class WindowsHelper {
 
     static PackageHandlers createExePackageHandlers() {
         PackageHandlers exe = new PackageHandlers();
-        // can't have install handler without also having uninstall handler
-        // so following is commented out for now
-        // exe.installHandler = cmd -> {
-        //     cmd.verifyIsOfType(PackageType.WIN_EXE);
-        //     new Executor().setExecutable(cmd.outputBundle()).execute();
-        // };
+        exe.installHandler = cmd -> {
+            cmd.verifyIsOfType(PackageType.WIN_EXE);
+            new Executor().setExecutable(cmd.outputBundle()).execute();
+        };
 
         return exe;
     }
@@ -210,7 +208,7 @@ public class WindowsHelper {
             Path shortcutPath = shortcutsRoot.resolve(startMenuShortcutPath());
             verifyShortcut(shortcutPath, exists);
             if (!exists) {
-                TKit.assertPathNotEmptyDirectory(shortcutPath.getParent());
+                TKit.assertPathExists(shortcutPath.getParent(), false);
             }
         }
 

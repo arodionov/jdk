@@ -28,8 +28,7 @@
 #include "utilities/globalDefinitions.hpp"
 
 #include "asm/assembler.hpp"
-#include "code/codeBlob.hpp"
-#include "code/nmethod.hpp"
+#include "asm/codeBuffer.hpp"
 #include "compiler/abstractDisassembler.hpp"
 #include "runtime/globals.hpp"
 #include "utilities/macros.hpp"
@@ -52,6 +51,13 @@ class Disassembler : public AbstractDisassembler {
                                void* printf_stream,
                                const char* options,
                                int newline);
+  // this is the type of the dll entry point for old version:
+  typedef void* (*decode_func)(void* start_va, void* end_va,
+                               void* (*event_callback)(void*, const char*, void*),
+                               void* event_stream,
+                               int (*printf_callback)(void*, const char*, ...),
+                               void* printf_stream,
+                               const char* options);
   // points to the library.
   static void*    _library;
   // bailout
@@ -59,6 +65,7 @@ class Disassembler : public AbstractDisassembler {
   static bool     _library_usable;
   // points to the decode function.
   static decode_func_virtual _decode_instructions_virtual;
+  static decode_func _decode_instructions;
 
   // tries to load library and return whether it succeeded.
   // Allow (diagnostic) output redirection.
@@ -81,10 +88,10 @@ class Disassembler : public AbstractDisassembler {
   // about which decoding format is used.
   // We can also enforce using the abstract disassembler.
   static bool is_abstract() {
-    if (!_tried_to_load_library) {
+    if (!_tried_to_load_library /* && !UseAbstractDisassembler */) {
       load_library();
     }
-    return ! _library_usable;
+    return ! _library_usable /* || UseAbstractDisassembler */;  // Not available until DecodeErrorFile is supported.
   }
 
   // Check out if we are doing a live disassembly or a post-mortem
@@ -98,12 +105,14 @@ class Disassembler : public AbstractDisassembler {
 #endif
   }
 
+  // Directly disassemble code buffer.
+  static void decode(CodeBuffer* cb, address start, address end, outputStream* st = NULL);
   // Directly disassemble code blob.
-  static void decode(CodeBlob *cb,               outputStream* st = NULL);
+  static void decode(CodeBlob *cb,               outputStream* st = NULL, CodeStrings c = CodeStrings());
   // Directly disassemble nmethod.
-  static void decode(nmethod* nm,                outputStream* st = NULL);
+  static void decode(nmethod* nm,                outputStream* st = NULL, CodeStrings c = CodeStrings());
   // Disassemble an arbitrary memory range.
-  static void decode(address start, address end, outputStream* st = NULL, const CodeStrings* = NULL);
+  static void decode(address start, address end, outputStream* st = NULL, CodeStrings c = CodeStrings() /* , ptrdiff_t offset */);
 
   static void _hook(const char* file, int line, class MacroAssembler* masm);
 

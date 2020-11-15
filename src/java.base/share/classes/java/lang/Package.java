@@ -115,6 +115,7 @@ import jdk.internal.reflect.Reflection;
  *
  * @since 1.2
  * @revised 9
+ * @spec JPMS
  */
 public class Package extends NamedPackage implements java.lang.reflect.AnnotatedElement {
     /**
@@ -213,6 +214,7 @@ public class Package extends NamedPackage implements java.lang.reflect.Annotated
      * is returned if it is not known.
      *
      * @revised 9
+     * @spec JPMS
      */
     public String getImplementationVendor() {
         return versionInfo.implVendor;
@@ -342,6 +344,7 @@ public class Package extends NamedPackage implements java.lang.reflect.Annotated
      * @see ClassLoader#getDefinedPackage
      *
      * @revised 9
+     * @spec JPMS
      */
     @CallerSensitive
     @Deprecated(since="9")
@@ -366,6 +369,7 @@ public class Package extends NamedPackage implements java.lang.reflect.Annotated
      * @see ClassLoader#getDefinedPackages
      *
      * @revised 9
+     * @spec JPMS
      */
     @CallerSensitive
     public static Package[] getPackages() {

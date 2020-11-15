@@ -25,7 +25,6 @@
 
 package sun.security.provider;
 
-import jdk.internal.vm.annotation.IntrinsicCandidate;
 import static sun.security.provider.ByteArrayAccess.*;
 import java.nio.*;
 import java.util.*;
@@ -74,25 +73,15 @@ abstract class SHA3 extends DigestBase {
         this.suffix = suffix;
     }
 
-    private void implCompressCheck(byte[] b, int ofs) {
-        Objects.requireNonNull(b);
-    }
-
     /**
      * Core compression function. Processes blockSize bytes at a time
      * and updates the state of this object.
      */
     void implCompress(byte[] b, int ofs) {
-        implCompressCheck(b, ofs);
-        implCompress0(b, ofs);
-    }
-
-    @IntrinsicCandidate
-    private void implCompress0(byte[] b, int ofs) {
-       for (int i = 0; i < buffer.length; i++) {
-           state[i] ^= b[ofs++];
-       }
-       keccak();
+        for (int i = 0; i < buffer.length; i++) {
+            state[i] ^= b[ofs++];
+        }
+        keccak();
     }
 
     /**
@@ -105,7 +94,10 @@ abstract class SHA3 extends DigestBase {
         if (numOfPadding < 1) {
             throw new ProviderException("Incorrect pad size: " + numOfPadding);
         }
-        implCompress(buffer, 0);
+        for (int i = 0; i < buffer.length; i++) {
+            state[i] ^= buffer[i];
+        }
+        keccak();
         System.arraycopy(state, 0, out, ofs, engineGetDigestLength());
     }
 

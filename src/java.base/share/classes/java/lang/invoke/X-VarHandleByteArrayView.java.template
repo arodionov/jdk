@@ -27,8 +27,6 @@ package java.lang.invoke;
 import jdk.internal.access.JavaNioAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.access.foreign.MemorySegmentProxy;
-import jdk.internal.misc.ScopedMemoryAccess;
-import jdk.internal.misc.ScopedMemoryAccess.Scope;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.util.Preconditions;
 import jdk.internal.vm.annotation.ForceInline;
@@ -43,11 +41,9 @@ import static java.lang.invoke.MethodHandleStatics.UNSAFE;
 
 final class VarHandleByteArrayAs$Type$s extends VarHandleByteArrayBase {
 
-    static final JavaNioAccess NIO_ACCESS = SharedSecrets.getJavaNioAccess();
+    static JavaNioAccess nioAccess = SharedSecrets.getJavaNioAccess();
 
     static final int ALIGN = $BoxType$.BYTES - 1;
-    
-    static final ScopedMemoryAccess SCOPED_MEMORY_ACCESS = ScopedMemoryAccess.getScopedMemoryAccess();
 
 #if[floatingPoint]
     @ForceInline
@@ -72,8 +68,8 @@ final class VarHandleByteArrayAs$Type$s extends VarHandleByteArrayBase {
     private static abstract class ByteArrayViewVarHandle extends VarHandle {
         final boolean be;
 
-        ByteArrayViewVarHandle(VarForm form, boolean be, boolean exact) {
-            super(form, exact);
+        ByteArrayViewVarHandle(VarForm form, boolean be) {
+            super(form);
             this.be = be;
         }
     }
@@ -81,30 +77,12 @@ final class VarHandleByteArrayAs$Type$s extends VarHandleByteArrayBase {
     static final class ArrayHandle extends ByteArrayViewVarHandle {
 
         ArrayHandle(boolean be) {
-            this(be, false);
-        }
-
-        private ArrayHandle(boolean be, boolean exact) {
-            super(ArrayHandle.FORM, be, exact);
+            super(ArrayHandle.FORM, be);
         }
 
         @Override
-        public ArrayHandle withInvokeExactBehavior() {
-            return hasInvokeExactBehavior()
-                ? this
-                : new ArrayHandle(be, true);
-        }
-
-        @Override
-        public ArrayHandle withInvokeBehavior() {
-            return !hasInvokeExactBehavior()
-                ? this
-                : new ArrayHandle(be, false);
-        }
-
-        @Override
-        final MethodType accessModeTypeUncached(AccessType at) {
-            return at.accessModeType(byte[].class, $type$.class, int.class);
+        final MethodType accessModeTypeUncached(AccessMode accessMode) {
+            return accessMode.at.accessModeType(byte[].class, $type$.class, int.class);
         }
 
         @ForceInline
@@ -577,43 +555,21 @@ final class VarHandleByteArrayAs$Type$s extends VarHandleByteArrayBase {
     static final class ByteBufferHandle extends ByteArrayViewVarHandle {
 
         ByteBufferHandle(boolean be) {
-            this(be, false);
-        }
-
-        private ByteBufferHandle(boolean be, boolean exact) {
-            super(ByteBufferHandle.FORM, be, exact);
+            super(ByteBufferHandle.FORM, be);
         }
 
         @Override
-        public ByteBufferHandle withInvokeExactBehavior() {
-            return hasInvokeExactBehavior()
-                ? this
-                : new ByteBufferHandle(be, true);
-        }
-
-        @Override
-        public ByteBufferHandle withInvokeBehavior() {
-            return !hasInvokeExactBehavior()
-                ? this
-                : new ByteBufferHandle(be, false);
-        }
-
-        @Override
-        final MethodType accessModeTypeUncached(AccessType at) {
-            return at.accessModeType(ByteBuffer.class, $type$.class, int.class);
+        final MethodType accessModeTypeUncached(AccessMode accessMode) {
+            return accessMode.at.accessModeType(ByteBuffer.class, $type$.class, int.class);
         }
 
         @ForceInline
         static int index(ByteBuffer bb, int index) {
-            MemorySegmentProxy segmentProxy = NIO_ACCESS.bufferSegment(bb);
+            MemorySegmentProxy segmentProxy = nioAccess.bufferSegment(bb);
+            if (segmentProxy != null) {
+                segmentProxy.checkValidState();
+            }
             return Preconditions.checkIndex(index, UNSAFE.getInt(bb, BUFFER_LIMIT) - ALIGN, null);
-        }
-
-        @ForceInline
-        static Scope scope(ByteBuffer bb) {
-            MemorySegmentProxy segmentProxy = NIO_ACCESS.bufferSegment(bb);
-            return segmentProxy != null ?
-                    segmentProxy.scope() : null;
         }
 
         @ForceInline
@@ -636,13 +592,13 @@ final class VarHandleByteArrayAs$Type$s extends VarHandleByteArrayBase {
             ByteBufferHandle handle = (ByteBufferHandle)ob;
             ByteBuffer bb = (ByteBuffer) Objects.requireNonNull(obb);
 #if[floatingPoint]
-            $rawType$ rawValue = SCOPED_MEMORY_ACCESS.get$RawType$Unaligned(scope(bb),
+            $rawType$ rawValue = UNSAFE.get$RawType$Unaligned(
                     UNSAFE.getReference(bb, BYTE_BUFFER_HB),
                     ((long) index(bb, index)) + UNSAFE.getLong(bb, BUFFER_ADDRESS),
                     handle.be);
             return $Type$.$rawType$BitsTo$Type$(rawValue);
 #else[floatingPoint]
-            return SCOPED_MEMORY_ACCESS.get$Type$Unaligned(scope(bb),
+            return UNSAFE.get$Type$Unaligned(
                     UNSAFE.getReference(bb, BYTE_BUFFER_HB),
                     ((long) index(bb, index)) + UNSAFE.getLong(bb, BUFFER_ADDRESS),
                     handle.be);
@@ -654,13 +610,13 @@ final class VarHandleByteArrayAs$Type$s extends VarHandleByteArrayBase {
             ByteBufferHandle handle = (ByteBufferHandle)ob;
             ByteBuffer bb = (ByteBuffer) Objects.requireNonNull(obb);
 #if[floatingPoint]
-            SCOPED_MEMORY_ACCESS.put$RawType$Unaligned(scope(bb),
+            UNSAFE.put$RawType$Unaligned(
                     UNSAFE.getReference(bb, BYTE_BUFFER_HB),
                     ((long) indexRO(bb, index)) + UNSAFE.getLong(bb, BUFFER_ADDRESS),
                     $Type$.$type$ToRaw$RawType$Bits(value),
                     handle.be);
 #else[floatingPoint]
-            SCOPED_MEMORY_ACCESS.put$Type$Unaligned(scope(bb),
+            UNSAFE.put$Type$Unaligned(
                     UNSAFE.getReference(bb, BYTE_BUFFER_HB),
                     ((long) indexRO(bb, index)) + UNSAFE.getLong(bb, BUFFER_ADDRESS),
                     value,
@@ -673,7 +629,7 @@ final class VarHandleByteArrayAs$Type$s extends VarHandleByteArrayBase {
             ByteBufferHandle handle = (ByteBufferHandle)ob;
             ByteBuffer bb = (ByteBuffer) Objects.requireNonNull(obb);
             return convEndian(handle.be,
-                              SCOPED_MEMORY_ACCESS.get$RawType$Volatile(scope(bb),
+                              UNSAFE.get$RawType$Volatile(
                                       UNSAFE.getReference(bb, BYTE_BUFFER_HB),
                                       address(bb, index(bb, index))));
         }
@@ -682,7 +638,7 @@ final class VarHandleByteArrayAs$Type$s extends VarHandleByteArrayBase {
         static void setVolatile(VarHandle ob, Object obb, int index, $type$ value) {
             ByteBufferHandle handle = (ByteBufferHandle)ob;
             ByteBuffer bb = (ByteBuffer) Objects.requireNonNull(obb);
-            SCOPED_MEMORY_ACCESS.put$RawType$Volatile(scope(bb),
+            UNSAFE.put$RawType$Volatile(
                     UNSAFE.getReference(bb, BYTE_BUFFER_HB),
                     address(bb, indexRO(bb, index)),
                     convEndian(handle.be, value));
@@ -693,7 +649,7 @@ final class VarHandleByteArrayAs$Type$s extends VarHandleByteArrayBase {
             ByteBufferHandle handle = (ByteBufferHandle)ob;
             ByteBuffer bb = (ByteBuffer) Objects.requireNonNull(obb);
             return convEndian(handle.be,
-                              SCOPED_MEMORY_ACCESS.get$RawType$Acquire(scope(bb),
+                              UNSAFE.get$RawType$Acquire(
                                       UNSAFE.getReference(bb, BYTE_BUFFER_HB),
                                       address(bb, index(bb, index))));
         }
@@ -702,7 +658,7 @@ final class VarHandleByteArrayAs$Type$s extends VarHandleByteArrayBase {
         static void setRelease(VarHandle ob, Object obb, int index, $type$ value) {
             ByteBufferHandle handle = (ByteBufferHandle)ob;
             ByteBuffer bb = (ByteBuffer) Objects.requireNonNull(obb);
-            SCOPED_MEMORY_ACCESS.put$RawType$Release(scope(bb),
+            UNSAFE.put$RawType$Release(
                     UNSAFE.getReference(bb, BYTE_BUFFER_HB),
                     address(bb, indexRO(bb, index)),
                     convEndian(handle.be, value));
@@ -713,7 +669,7 @@ final class VarHandleByteArrayAs$Type$s extends VarHandleByteArrayBase {
             ByteBufferHandle handle = (ByteBufferHandle)ob;
             ByteBuffer bb = (ByteBuffer) Objects.requireNonNull(obb);
             return convEndian(handle.be,
-                              SCOPED_MEMORY_ACCESS.get$RawType$Opaque(scope(bb),
+                              UNSAFE.get$RawType$Opaque(
                                       UNSAFE.getReference(bb, BYTE_BUFFER_HB),
                                       address(bb, index(bb, index))));
         }
@@ -722,7 +678,7 @@ final class VarHandleByteArrayAs$Type$s extends VarHandleByteArrayBase {
         static void setOpaque(VarHandle ob, Object obb, int index, $type$ value) {
             ByteBufferHandle handle = (ByteBufferHandle)ob;
             ByteBuffer bb = (ByteBuffer) Objects.requireNonNull(obb);
-            SCOPED_MEMORY_ACCESS.put$RawType$Opaque(scope(bb),
+            UNSAFE.put$RawType$Opaque(
                     UNSAFE.getReference(bb, BYTE_BUFFER_HB),
                     address(bb, indexRO(bb, index)),
                     convEndian(handle.be, value));
@@ -734,12 +690,12 @@ final class VarHandleByteArrayAs$Type$s extends VarHandleByteArrayBase {
             ByteBufferHandle handle = (ByteBufferHandle)ob;
             ByteBuffer bb = (ByteBuffer) Objects.requireNonNull(obb);
 #if[Object]
-            return SCOPED_MEMORY_ACCESS.compareAndSetReference(scope(bb),
+            return UNSAFE.compareAndSetReference(
                     UNSAFE.getReference(bb, BYTE_BUFFER_HB),
                     address(bb, indexRO(bb, index)),
                     convEndian(handle.be, expected), convEndian(handle.be, value));
 #else[Object]
-            return SCOPED_MEMORY_ACCESS.compareAndSet$RawType$(scope(bb),
+            return UNSAFE.compareAndSet$RawType$(
                     UNSAFE.getReference(bb, BYTE_BUFFER_HB),
                     address(bb, indexRO(bb, index)),
                     convEndian(handle.be, expected), convEndian(handle.be, value));
@@ -751,7 +707,7 @@ final class VarHandleByteArrayAs$Type$s extends VarHandleByteArrayBase {
             ByteBufferHandle handle = (ByteBufferHandle)ob;
             ByteBuffer bb = (ByteBuffer) Objects.requireNonNull(obb);
             return convEndian(handle.be,
-                              SCOPED_MEMORY_ACCESS.compareAndExchange$RawType$(scope(bb),
+                              UNSAFE.compareAndExchange$RawType$(
                                       UNSAFE.getReference(bb, BYTE_BUFFER_HB),
                                       address(bb, indexRO(bb, index)),
                                       convEndian(handle.be, expected), convEndian(handle.be, value)));
@@ -762,7 +718,7 @@ final class VarHandleByteArrayAs$Type$s extends VarHandleByteArrayBase {
             ByteBufferHandle handle = (ByteBufferHandle)ob;
             ByteBuffer bb = (ByteBuffer) Objects.requireNonNull(obb);
             return convEndian(handle.be,
-                              SCOPED_MEMORY_ACCESS.compareAndExchange$RawType$Acquire(scope(bb),
+                              UNSAFE.compareAndExchange$RawType$Acquire(
                                       UNSAFE.getReference(bb, BYTE_BUFFER_HB),
                                       address(bb, indexRO(bb, index)),
                                       convEndian(handle.be, expected), convEndian(handle.be, value)));
@@ -773,7 +729,7 @@ final class VarHandleByteArrayAs$Type$s extends VarHandleByteArrayBase {
             ByteBufferHandle handle = (ByteBufferHandle)ob;
             ByteBuffer bb = (ByteBuffer) Objects.requireNonNull(obb);
             return convEndian(handle.be,
-                              SCOPED_MEMORY_ACCESS.compareAndExchange$RawType$Release(scope(bb),
+                              UNSAFE.compareAndExchange$RawType$Release(
                                       UNSAFE.getReference(bb, BYTE_BUFFER_HB),
                                       address(bb, indexRO(bb, index)),
                                       convEndian(handle.be, expected), convEndian(handle.be, value)));
@@ -783,7 +739,7 @@ final class VarHandleByteArrayAs$Type$s extends VarHandleByteArrayBase {
         static boolean weakCompareAndSetPlain(VarHandle ob, Object obb, int index, $type$ expected, $type$ value) {
             ByteBufferHandle handle = (ByteBufferHandle)ob;
             ByteBuffer bb = (ByteBuffer) Objects.requireNonNull(obb);
-            return SCOPED_MEMORY_ACCESS.weakCompareAndSet$RawType$Plain(scope(bb),
+            return UNSAFE.weakCompareAndSet$RawType$Plain(
                     UNSAFE.getReference(bb, BYTE_BUFFER_HB),
                     address(bb, indexRO(bb, index)),
                     convEndian(handle.be, expected), convEndian(handle.be, value));
@@ -793,7 +749,7 @@ final class VarHandleByteArrayAs$Type$s extends VarHandleByteArrayBase {
         static boolean weakCompareAndSet(VarHandle ob, Object obb, int index, $type$ expected, $type$ value) {
             ByteBufferHandle handle = (ByteBufferHandle)ob;
             ByteBuffer bb = (ByteBuffer) Objects.requireNonNull(obb);
-            return SCOPED_MEMORY_ACCESS.weakCompareAndSet$RawType$(scope(bb),
+            return UNSAFE.weakCompareAndSet$RawType$(
                     UNSAFE.getReference(bb, BYTE_BUFFER_HB),
                     address(bb, indexRO(bb, index)),
                     convEndian(handle.be, expected), convEndian(handle.be, value));
@@ -803,7 +759,7 @@ final class VarHandleByteArrayAs$Type$s extends VarHandleByteArrayBase {
         static boolean weakCompareAndSetAcquire(VarHandle ob, Object obb, int index, $type$ expected, $type$ value) {
             ByteBufferHandle handle = (ByteBufferHandle)ob;
             ByteBuffer bb = (ByteBuffer) Objects.requireNonNull(obb);
-            return SCOPED_MEMORY_ACCESS.weakCompareAndSet$RawType$Acquire(scope(bb),
+            return UNSAFE.weakCompareAndSet$RawType$Acquire(
                     UNSAFE.getReference(bb, BYTE_BUFFER_HB),
                     address(bb, indexRO(bb, index)),
                     convEndian(handle.be, expected), convEndian(handle.be, value));
@@ -813,7 +769,7 @@ final class VarHandleByteArrayAs$Type$s extends VarHandleByteArrayBase {
         static boolean weakCompareAndSetRelease(VarHandle ob, Object obb, int index, $type$ expected, $type$ value) {
             ByteBufferHandle handle = (ByteBufferHandle)ob;
             ByteBuffer bb = (ByteBuffer) Objects.requireNonNull(obb);
-            return SCOPED_MEMORY_ACCESS.weakCompareAndSet$RawType$Release(scope(bb),
+            return UNSAFE.weakCompareAndSet$RawType$Release(
                     UNSAFE.getReference(bb, BYTE_BUFFER_HB),
                     address(bb, indexRO(bb, index)),
                     convEndian(handle.be, expected), convEndian(handle.be, value));
@@ -825,13 +781,13 @@ final class VarHandleByteArrayAs$Type$s extends VarHandleByteArrayBase {
             ByteBuffer bb = (ByteBuffer) Objects.requireNonNull(obb);
 #if[Object]
             return convEndian(handle.be,
-                              SCOPED_MEMORY_ACCESS.getAndSetReference(scope(bb),
+                              UNSAFE.getAndSetReference(
                                       UNSAFE.getReference(bb, BYTE_BUFFER_HB),
                                       address(bb, indexRO(bb, index)),
                                       convEndian(handle.be, value)));
 #else[Object]
             return convEndian(handle.be,
-                              SCOPED_MEMORY_ACCESS.getAndSet$RawType$(scope(bb),
+                              UNSAFE.getAndSet$RawType$(
                                       UNSAFE.getReference(bb, BYTE_BUFFER_HB),
                                       address(bb, indexRO(bb, index)),
                                       convEndian(handle.be, value)));
@@ -843,7 +799,7 @@ final class VarHandleByteArrayAs$Type$s extends VarHandleByteArrayBase {
             ByteBufferHandle handle = (ByteBufferHandle)ob;
             ByteBuffer bb = (ByteBuffer) Objects.requireNonNull(obb);
             return convEndian(handle.be,
-                              SCOPED_MEMORY_ACCESS.getAndSet$RawType$Acquire(scope(bb),
+                              UNSAFE.getAndSet$RawType$Acquire(
                                       UNSAFE.getReference(bb, BYTE_BUFFER_HB),
                                       address(bb, indexRO(bb, index)),
                                       convEndian(handle.be, value)));
@@ -854,7 +810,7 @@ final class VarHandleByteArrayAs$Type$s extends VarHandleByteArrayBase {
             ByteBufferHandle handle = (ByteBufferHandle)ob;
             ByteBuffer bb = (ByteBuffer) Objects.requireNonNull(obb);
             return convEndian(handle.be,
-                              SCOPED_MEMORY_ACCESS.getAndSet$RawType$Release(scope(bb),
+                              UNSAFE.getAndSet$RawType$Release(
                                       UNSAFE.getReference(bb, BYTE_BUFFER_HB),
                                       address(bb, indexRO(bb, index)),
                                       convEndian(handle.be, value)));
@@ -867,7 +823,7 @@ final class VarHandleByteArrayAs$Type$s extends VarHandleByteArrayBase {
             ByteBufferHandle handle = (ByteBufferHandle)ob;
             ByteBuffer bb = (ByteBuffer) Objects.requireNonNull(obb);
             if (handle.be == BE) {
-                return SCOPED_MEMORY_ACCESS.getAndAdd$RawType$(scope(bb),
+                return UNSAFE.getAndAdd$RawType$(
                         UNSAFE.getReference(bb, BYTE_BUFFER_HB),
                         address(bb, indexRO(bb, index)),
                         delta);
@@ -881,7 +837,7 @@ final class VarHandleByteArrayAs$Type$s extends VarHandleByteArrayBase {
             ByteBufferHandle handle = (ByteBufferHandle)ob;
             ByteBuffer bb = (ByteBuffer) Objects.requireNonNull(obb);
             if (handle.be == BE) {
-                return SCOPED_MEMORY_ACCESS.getAndAdd$RawType$Acquire(scope(bb),
+                return UNSAFE.getAndAdd$RawType$Acquire(
                         UNSAFE.getReference(bb, BYTE_BUFFER_HB),
                         address(bb, indexRO(bb, index)),
                         delta);
@@ -895,7 +851,7 @@ final class VarHandleByteArrayAs$Type$s extends VarHandleByteArrayBase {
             ByteBufferHandle handle = (ByteBufferHandle)ob;
             ByteBuffer bb = (ByteBuffer) Objects.requireNonNull(obb);
             if (handle.be == BE) {
-                return SCOPED_MEMORY_ACCESS.getAndAdd$RawType$Release(scope(bb),
+                return UNSAFE.getAndAdd$RawType$Release(
                         UNSAFE.getReference(bb, BYTE_BUFFER_HB),
                         address(bb, indexRO(bb, index)),
                         delta);
@@ -910,7 +866,7 @@ final class VarHandleByteArrayAs$Type$s extends VarHandleByteArrayBase {
             Object base = UNSAFE.getReference(bb, BYTE_BUFFER_HB);
             long offset = address(bb, indexRO(bb, index));
             do {
-                nativeExpectedValue = SCOPED_MEMORY_ACCESS.get$RawType$Volatile(scope(bb), base, offset);
+                nativeExpectedValue = UNSAFE.get$RawType$Volatile(base, offset);
                 expectedValue = $RawBoxType$.reverseBytes(nativeExpectedValue);
             } while (!UNSAFE.weakCompareAndSet$RawType$(base, offset,
                     nativeExpectedValue, $RawBoxType$.reverseBytes(expectedValue + delta)));
@@ -924,7 +880,7 @@ final class VarHandleByteArrayAs$Type$s extends VarHandleByteArrayBase {
             ByteBufferHandle handle = (ByteBufferHandle)ob;
             ByteBuffer bb = (ByteBuffer) Objects.requireNonNull(obb);
             if (handle.be == BE) {
-                return SCOPED_MEMORY_ACCESS.getAndBitwiseOr$RawType$(scope(bb),
+                return UNSAFE.getAndBitwiseOr$RawType$(
                         UNSAFE.getReference(bb, BYTE_BUFFER_HB),
                         address(bb, indexRO(bb, index)),
                         value);
@@ -938,7 +894,7 @@ final class VarHandleByteArrayAs$Type$s extends VarHandleByteArrayBase {
             ByteBufferHandle handle = (ByteBufferHandle)ob;
             ByteBuffer bb = (ByteBuffer) Objects.requireNonNull(obb);
             if (handle.be == BE) {
-                return SCOPED_MEMORY_ACCESS.getAndBitwiseOr$RawType$Release(scope(bb),
+                return UNSAFE.getAndBitwiseOr$RawType$Release(
                         UNSAFE.getReference(bb, BYTE_BUFFER_HB),
                         address(bb, indexRO(bb, index)),
                         value);
@@ -952,7 +908,7 @@ final class VarHandleByteArrayAs$Type$s extends VarHandleByteArrayBase {
             ByteBufferHandle handle = (ByteBufferHandle)ob;
             ByteBuffer bb = (ByteBuffer) Objects.requireNonNull(obb);
             if (handle.be == BE) {
-                return SCOPED_MEMORY_ACCESS.getAndBitwiseOr$RawType$Acquire(scope(bb),
+                return UNSAFE.getAndBitwiseOr$RawType$Acquire(
                         UNSAFE.getReference(bb, BYTE_BUFFER_HB),
                         address(bb, indexRO(bb, index)),
                         value);
@@ -967,7 +923,7 @@ final class VarHandleByteArrayAs$Type$s extends VarHandleByteArrayBase {
             Object base = UNSAFE.getReference(bb, BYTE_BUFFER_HB);
             long offset = address(bb, indexRO(bb, index));
             do {
-                nativeExpectedValue = SCOPED_MEMORY_ACCESS.get$RawType$Volatile(scope(bb), base, offset);
+                nativeExpectedValue = UNSAFE.get$RawType$Volatile(base, offset);
                 expectedValue = $RawBoxType$.reverseBytes(nativeExpectedValue);
             } while (!UNSAFE.weakCompareAndSet$RawType$(base, offset,
                     nativeExpectedValue, $RawBoxType$.reverseBytes(expectedValue | value)));
@@ -979,7 +935,7 @@ final class VarHandleByteArrayAs$Type$s extends VarHandleByteArrayBase {
             ByteBufferHandle handle = (ByteBufferHandle)ob;
             ByteBuffer bb = (ByteBuffer) Objects.requireNonNull(obb);
             if (handle.be == BE) {
-                return SCOPED_MEMORY_ACCESS.getAndBitwiseAnd$RawType$(scope(bb),
+                return UNSAFE.getAndBitwiseAnd$RawType$(
                         UNSAFE.getReference(bb, BYTE_BUFFER_HB),
                         address(bb, indexRO(bb, index)),
                         value);
@@ -993,7 +949,7 @@ final class VarHandleByteArrayAs$Type$s extends VarHandleByteArrayBase {
             ByteBufferHandle handle = (ByteBufferHandle)ob;
             ByteBuffer bb = (ByteBuffer) Objects.requireNonNull(obb);
             if (handle.be == BE) {
-                return SCOPED_MEMORY_ACCESS.getAndBitwiseAnd$RawType$Release(scope(bb),
+                return UNSAFE.getAndBitwiseAnd$RawType$Release(
                         UNSAFE.getReference(bb, BYTE_BUFFER_HB),
                         address(bb, indexRO(bb, index)),
                         value);
@@ -1007,7 +963,7 @@ final class VarHandleByteArrayAs$Type$s extends VarHandleByteArrayBase {
             ByteBufferHandle handle = (ByteBufferHandle)ob;
             ByteBuffer bb = (ByteBuffer) Objects.requireNonNull(obb);
             if (handle.be == BE) {
-                return SCOPED_MEMORY_ACCESS.getAndBitwiseAnd$RawType$Acquire(scope(bb),
+                return UNSAFE.getAndBitwiseAnd$RawType$Acquire(
                         UNSAFE.getReference(bb, BYTE_BUFFER_HB),
                         address(bb, indexRO(bb, index)),
                         value);
@@ -1022,7 +978,7 @@ final class VarHandleByteArrayAs$Type$s extends VarHandleByteArrayBase {
             Object base = UNSAFE.getReference(bb, BYTE_BUFFER_HB);
             long offset = address(bb, indexRO(bb, index));
             do {
-                nativeExpectedValue = SCOPED_MEMORY_ACCESS.get$RawType$Volatile(scope(bb), base, offset);
+                nativeExpectedValue = UNSAFE.get$RawType$Volatile(base, offset);
                 expectedValue = $RawBoxType$.reverseBytes(nativeExpectedValue);
             } while (!UNSAFE.weakCompareAndSet$RawType$(base, offset,
                     nativeExpectedValue, $RawBoxType$.reverseBytes(expectedValue & value)));
@@ -1035,7 +991,7 @@ final class VarHandleByteArrayAs$Type$s extends VarHandleByteArrayBase {
             ByteBufferHandle handle = (ByteBufferHandle)ob;
             ByteBuffer bb = (ByteBuffer) Objects.requireNonNull(obb);
             if (handle.be == BE) {
-                return SCOPED_MEMORY_ACCESS.getAndBitwiseXor$RawType$(scope(bb),
+                return UNSAFE.getAndBitwiseXor$RawType$(
                         UNSAFE.getReference(bb, BYTE_BUFFER_HB),
                         address(bb, indexRO(bb, index)),
                         value);
@@ -1049,7 +1005,7 @@ final class VarHandleByteArrayAs$Type$s extends VarHandleByteArrayBase {
             ByteBufferHandle handle = (ByteBufferHandle)ob;
             ByteBuffer bb = (ByteBuffer) Objects.requireNonNull(obb);
             if (handle.be == BE) {
-                return SCOPED_MEMORY_ACCESS.getAndBitwiseXor$RawType$Release(scope(bb),
+                return UNSAFE.getAndBitwiseXor$RawType$Release(
                         UNSAFE.getReference(bb, BYTE_BUFFER_HB),
                         address(bb, indexRO(bb, index)),
                         value);
@@ -1063,7 +1019,7 @@ final class VarHandleByteArrayAs$Type$s extends VarHandleByteArrayBase {
             ByteBufferHandle handle = (ByteBufferHandle)ob;
             ByteBuffer bb = (ByteBuffer) Objects.requireNonNull(obb);
             if (handle.be == BE) {
-                return SCOPED_MEMORY_ACCESS.getAndBitwiseXor$RawType$Acquire(scope(bb),
+                return UNSAFE.getAndBitwiseXor$RawType$Acquire(
                         UNSAFE.getReference(bb, BYTE_BUFFER_HB),
                         address(bb, indexRO(bb, index)),
                         value);
@@ -1078,7 +1034,7 @@ final class VarHandleByteArrayAs$Type$s extends VarHandleByteArrayBase {
             Object base = UNSAFE.getReference(bb, BYTE_BUFFER_HB);
             long offset = address(bb, indexRO(bb, index));
             do {
-                nativeExpectedValue = SCOPED_MEMORY_ACCESS.get$RawType$Volatile(scope(bb), base, offset);
+                nativeExpectedValue = UNSAFE.get$RawType$Volatile(base, offset);
                 expectedValue = $RawBoxType$.reverseBytes(nativeExpectedValue);
             } while (!UNSAFE.weakCompareAndSet$RawType$(base, offset,
                     nativeExpectedValue, $RawBoxType$.reverseBytes(expectedValue ^ value)));

@@ -36,16 +36,13 @@ public class MaxMetaspaceSizeTest {
     public static void main(String... args) throws Exception {
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
             "-Xmx1g",
-            "-XX:MaxMetaspaceSize=4K",
+            "-XX:InitialBootClassLoaderMetaspaceSize=4195328",
+            "-XX:MaxMetaspaceSize=4195328",
             "-XX:+UseCompressedClassPointers",
             "-XX:CompressedClassSpaceSize=1g",
             "--version");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
-        // We do not explicitly limit MaxMetaspaceSize to a lower minimum. User can get as low as he wants.
-        // However, you most certainly will hit either one of
-        // "OutOfMemoryError: Metaspace" or
-        // "OutOfMemoryError: Compressed class space"
-        output.shouldMatch("OutOfMemoryError.*(Compressed class space|Metaspace)");
+        output.shouldContain("MaxMetaspaceSize is too small.");
         output.shouldNotHaveExitValue(0);
     }
 }

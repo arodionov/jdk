@@ -35,6 +35,7 @@ import javax.lang.model.type.TypeMirror;
  * @see javax.lang.model.util.Elements#getModuleOf
  * @since 9
  * @jls 7.7 Module Declarations
+ * @spec JPMS
  */
 public interface ModuleElement extends Element, QualifiedNameable {
     /**
@@ -136,6 +137,7 @@ public interface ModuleElement extends Element, QualifiedNameable {
      * future versions of the Java programming language.
      *
      * @since 9
+     * @spec JPMS
      */
     enum DirectiveKind {
         /** A "requires (static|transitive)* module-name" directive. */
@@ -156,6 +158,7 @@ public interface ModuleElement extends Element, QualifiedNameable {
      * module in the Java Platform Module System.
      *
      * @since 9
+     * @spec JPMS
      */
     interface Directive {
         /**
@@ -222,6 +225,7 @@ public interface ModuleElement extends Element, QualifiedNameable {
      *            additional parameter.
      *
      * @since 9
+     * @spec JPMS
      */
     interface DirectiveVisitor<R, P> {
         /**
@@ -307,6 +311,7 @@ public interface ModuleElement extends Element, QualifiedNameable {
     /**
      * A dependency of a module.
      * @since 9
+     * @spec JPMS
      */
     interface RequiresDirective extends Directive {
         /**
@@ -331,6 +336,7 @@ public interface ModuleElement extends Element, QualifiedNameable {
     /**
      * An exported package of a module.
      * @since 9
+     * @spec JPMS
      */
     interface ExportsDirective extends Directive {
 
@@ -352,6 +358,7 @@ public interface ModuleElement extends Element, QualifiedNameable {
     /**
      * An opened package of a module.
      * @since 9
+     * @spec JPMS
      */
     interface OpensDirective extends Directive {
 
@@ -373,6 +380,7 @@ public interface ModuleElement extends Element, QualifiedNameable {
     /**
      * An implementation of a service provided by a module.
      * @since 9
+     * @spec JPMS
      */
     interface ProvidesDirective extends Directive {
         /**
@@ -391,6 +399,7 @@ public interface ModuleElement extends Element, QualifiedNameable {
     /**
      * A reference to a service used by a module.
      * @since 9
+     * @spec JPMS
      */
     interface UsesDirective extends Directive {
         /**

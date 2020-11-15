@@ -56,6 +56,7 @@
                                                                \
  f(uintx,  MaxGCPauseMillisConstraintFunc)                     \
  f(uintx,  GCPauseIntervalMillisConstraintFunc)                \
+ f(size_t, InitialBootClassLoaderMetaspaceSizeConstraintFunc)  \
  f(size_t, MinHeapSizeConstraintFunc)                          \
  f(size_t, InitialHeapSizeConstraintFunc)                      \
  f(size_t, MaxHeapSizeConstraintFunc)                          \
@@ -67,7 +68,8 @@
  f(uintx,  TLABWasteIncrementConstraintFunc)                   \
  f(uintx,  SurvivorRatioConstraintFunc)                        \
  f(size_t, MetaspaceSizeConstraintFunc)                        \
- f(size_t, MaxMetaspaceSizeConstraintFunc)
+ f(size_t, MaxMetaspaceSizeConstraintFunc)                     \
+ f(intx,   SurvivorAlignmentInBytesConstraintFunc)
 
 SHARED_GC_CONSTRAINTS(DECLARE_CONSTRAINT)
 

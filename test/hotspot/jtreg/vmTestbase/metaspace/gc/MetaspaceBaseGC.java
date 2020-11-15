@@ -101,6 +101,7 @@ public abstract class MetaspaceBaseGC {
 
     protected void configure(String args[]) {
         vmArgs.addAll(ManagementFactory.getRuntimeMXBean().getInputArguments());
+        useLargepages = PAGE_SIZE > 1_000_000 && !vmArgs.contains("-XX:-UseLargePagesInMetaspace");
 
         System.out.println(vmArgs);
 

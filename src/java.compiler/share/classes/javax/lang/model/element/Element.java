@@ -158,6 +158,7 @@ public interface Element extends javax.lang.model.AnnotatedConstruct {
      * @see ModuleElement#getSimpleName
      * @see RecordComponentElement#getSimpleName
      * @revised 9
+     * @spec JPMS
      */
     Name getSimpleName();
 
@@ -199,6 +200,7 @@ public interface Element extends javax.lang.model.AnnotatedConstruct {
      * @return the enclosing element, or {@code null} if there is none
      * @see Elements#getPackageOf
      * @revised 9
+     * @spec JPMS
      */
     Element getEnclosingElement();
 
@@ -235,6 +237,7 @@ public interface Element extends javax.lang.model.AnnotatedConstruct {
      * @jls 8.8.9 Default Constructor
      * @jls 8.9 Enum Types
      * @revised 9
+     * @spec JPMS
      */
     List<? extends Element> getEnclosedElements();
 

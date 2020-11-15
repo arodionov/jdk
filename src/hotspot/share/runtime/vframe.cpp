@@ -24,7 +24,6 @@
 
 #include "precompiled.hpp"
 #include "classfile/javaClasses.inline.hpp"
-#include "classfile/javaThreadStatus.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
@@ -37,7 +36,6 @@
 #include "memory/resourceArea.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/oop.inline.hpp"
-#include "prims/jvmtiExport.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/objectMonitor.hpp"
@@ -82,11 +80,6 @@ vframe* vframe::new_vframe(const frame* f, const RegisterMap* reg_map, JavaThrea
       frame s = f->sender(&temp_map);
       return new_vframe(&s, &temp_map, thread);
     }
-  }
-
-  // Entry frame
-  if (f->is_entry_frame()) {
-    return new entryVFrame(f, reg_map, thread);
   }
 
   // External frame
@@ -192,7 +185,7 @@ void javaVFrame::print_lock_info_on(outputStream* st, int frame_count) {
         if (sv->type() == T_OBJECT) {
           Handle o = locs->at(0)->get_obj();
           if (java_lang_Thread::get_thread_status(thread()->threadObj()) ==
-                                JavaThreadStatus::BLOCKED_ON_MONITOR_ENTER) {
+                                java_lang_Thread::BLOCKED_ON_MONITOR_ENTER) {
             wait_state = "waiting to re-lock in wait()";
           }
           print_locked_object_class_name(st, o, wait_state);
@@ -482,8 +475,7 @@ void vframeStreamCommon::found_bad_method_frame() const {
 
 // top-frame will be skipped
 vframeStream::vframeStream(JavaThread* thread, frame top_frame,
-                           bool stop_at_java_call_stub) :
-    vframeStreamCommon(thread, true /* process_frames */) {
+  bool stop_at_java_call_stub) : vframeStreamCommon(thread) {
   _stop_at_java_call_stub = stop_at_java_call_stub;
 
   // skip top frame, as it may not be at safepoint
@@ -671,7 +663,7 @@ void javaVFrame::print() {
     }
     tty->cr();
     tty->print("\t  ");
-    monitor->lock()->print_on(tty, monitor->owner());
+    monitor->lock()->print_on(tty);
     tty->cr();
   }
 }

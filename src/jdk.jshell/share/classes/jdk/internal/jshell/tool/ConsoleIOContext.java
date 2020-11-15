@@ -833,7 +833,6 @@ class ConsoleIOContext extends IOContext {
         }
         it.remove();
         in.getHistory().add(source);
-        in.getHistory().resetIndex();
     }
 
     private static final long ESCAPE_TIMEOUT = 100;
